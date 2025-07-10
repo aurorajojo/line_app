@@ -18,11 +18,6 @@ def home():
 def callback():
     signature = request.headers.get("X-Line-Signature")  # 驗證用簽章
     body = request.get_data(as_text=True)  # 傳入的 JSON 文字內容
-    
-    print("=== DEBUG ===")
-    print("CHANNEL_SECRET:", os.getenv("CHANNEL_SECRET"))
-    print("Signature:", request.headers.get("X-Line-Signature"))
-    print("Body:", request.get_data(as_text=True))
 
     try:
         handler.handle(body, signature)  # 使用 LINE SDK 驗證與處理事件

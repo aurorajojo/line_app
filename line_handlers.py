@@ -44,7 +44,7 @@ def handle_text(event):
             return
 
         # === 查詢歷史對話，建立上下文 ===
-        history = list(history_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(5))
+        history = list(history_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(10)) # 看最近十筆歷史對話
         history.reverse()  # 由舊至新
 
         # 建立對話上下文（system + 歷史）

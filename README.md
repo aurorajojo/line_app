@@ -27,7 +27,7 @@
 ### `system_prompt.txt`
 - 儲存語言模型的 system prompt，用於引導模型回應風格與身份定位。
 
-## 📦 `requirements.txt`
+## `requirements.txt`
 - 記錄所需的 Python 套件。
 
 下載套件：

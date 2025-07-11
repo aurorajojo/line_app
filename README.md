@@ -38,8 +38,3 @@ pip install -r requirements.txt
 ```bash
 python app.py
 ```
-
-若是用ngrok暫時demo：
-```bash
-ngrok http 5000
-```

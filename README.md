@@ -19,7 +19,7 @@
 - 封裝與語言模型（Groq / LLaMA）溝通的邏輯。
 - 定義如何將使用者訊息送出並取得回應。
 
-## `render_wake_up.py`
+### `render_wake_up.py`
 - 定時 ping Render 平台以防止伺服器自動休眠。
 
 ### `mongo.py`
@@ -29,7 +29,7 @@
 ### `resources.py`
 - 載入 `system_prompt.txt` 、 `cycu_resources.json`，提供語言模型的指令（角色、語氣等）以及中原大學（CYCU）相關的各類資源資訊。
 
-## `requirements.txt`
+### `requirements.txt`
 - 記錄所需的 Python 套件。
 
 ### `system_prompt.txt`

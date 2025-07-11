@@ -19,7 +19,7 @@
 - 定義如何將使用者訊息送出並取得回應。
 
 ### `system_prompt.py`
-- 載入 `data/system_prompt.txt`，提供語言模型的指令（角色、語氣等）。
+- 載入 `system_prompt.txt`，提供語言模型的指令（角色、語氣等）。
 
 ## `render_wake_up.py`
 - 定時 ping Render 平台以防止伺服器自動休眠。

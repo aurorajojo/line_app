@@ -11,8 +11,8 @@
 
 ### `line_handlers.py`
 - 處理來自 LINE 的訊息事件。
-- 匯入 `llm.` 定義模型處理邏輯。
-- 匯入 `mongo` 連接MongoDB 資料庫。
+- 匯入 `llm` 模組定義模型處理邏輯。
+- 匯入 `mongo` 模組連接MongoDB 資料庫。
 - 定義收到文字訊息後的應對流程。
 
 ### `llm.py`

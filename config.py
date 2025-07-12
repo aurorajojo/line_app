@@ -3,6 +3,8 @@
 
 import os
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # LINE Bot 設定
 CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET", "")
 CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "")

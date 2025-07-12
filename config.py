@@ -15,5 +15,5 @@ GROQ_API_URL = os.getenv("GROQ_API_URL", "https://api.groq.com/openai/v1/chat/co
 MONGODB_URI = os.getenv("MONGODB_URI", "")
 
 # 資源檔案路徑
-PROMPT_FILE = "system_prompt.txt"
-RESOURCE_FILE = "cycu_resources.json"
+PROMPT_FILE = os.path.join(settings.BASE_DIR, 'data', 'system_prompt.txt')
+RESOURCE_FILE = os.path.join(settings.BASE_DIR, 'data', 'cycu_resources.json')

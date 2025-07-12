@@ -26,7 +26,9 @@ def callback():
 
     return "OK"
 
+
+wake_up_render()  # 啟動定時喚醒
+
 if __name__ == "__main__":
-    wake_up_render()  # 啟動定時喚醒
     app.run(port=5000)  # 啟動 Flask 本地伺服器
 

@@ -6,7 +6,7 @@
 ## 資料集內容
 
 - `ESConv_translated.json`
-- `ESConv_cleaned.json`
+- `ESConv_dialog_id.json`
 <br>
 <br>
 
@@ -27,13 +27,13 @@
 <br>
 <br>
 
-## `ESConv_cleaned.json`檔案內容
+## `ESConv_dialog_id.json`檔案內容
 
 每筆資料包含以下欄位：
 
 | 欄位名稱 | 說明 |
 |----------|------|
-| `experience_type` | 經驗類型（如：Current Experience、Previous Experience） |
+| `dialog_id` | 對話編號（如：d1, d2, ..., d1300） |
 | `emotion_type` | 情緒類型（如：anxiety, depression, anger） |
 | `problem_type` | 問題類型（如：job crisis, breakup） |
 | `situation` | 求助者的簡述問題背景 |

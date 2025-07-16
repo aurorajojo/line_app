@@ -6,7 +6,7 @@
 ## 資料集內容
 
 - `ESConv_translated.json`
-- `ESConv_translated_no_survey_no_question.json`
+- `ESConv_cleaned.json`
 <br>
 <br>
 
@@ -27,7 +27,7 @@
 <br>
 <br>
 
-## `ESConv_translated_no_survey_no_question.json`檔案內容
+## `ESConv_cleaned.json`檔案內容
 
 每筆資料包含以下欄位：
 

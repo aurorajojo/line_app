@@ -4,7 +4,7 @@
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
 from linebot.v3.messaging import MessagingApi, ReplyMessageRequest, TextMessage
 from linebot.v3 import WebhookHandler
-from linebot.v3.messaging import ApiClient, Configuration
+from linebot.v3.messaging import ApiClient, Configuration, ShowLoadingAnimationRequest
 
 from config import CHANNEL_SECRET, CHANNEL_ACCESS_TOKEN
 from mongo import history_collection
@@ -14,6 +14,7 @@ from llm import call_groq_llm
 
 from datetime import datetime
 import json
+import time
 
 # 設定 LINE Handler 與 Configuration
 handler = WebhookHandler(CHANNEL_SECRET)
@@ -35,6 +36,12 @@ def handle_text(event):
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
+        line_bot_api.show_loading_animation(  #延遲動畫
+            ShowLoadingAnimationRequest(
+                chatId = user_id,
+                loadingSeconds=5
+            )
+        )
 
         # 回覆地點查詢
         if found_location:
@@ -44,7 +51,7 @@ def handle_text(event):
             return
 
         # === 查詢歷史對話，建立上下文 ===
-        history = list(history_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(10)) # 看最近十筆歷史對話
+        history = list(history_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(10))
         history.reverse()  # 由舊至新
 
         # 建立對話上下文（system + 歷史）

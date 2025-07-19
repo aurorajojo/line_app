@@ -4,12 +4,13 @@
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
 from linebot.v3.messaging import MessagingApi, ReplyMessageRequest, TextMessage
 from linebot.v3 import WebhookHandler
-from linebot.v3.messaging import ApiClient, Configuration, ShowLoadingAnimationRequest
+from linebot.v3.messaging import ApiClient, Configuration, ShowLoadingAnimationRequest, FlexMessage
 
 from config import CHANNEL_SECRET, CHANNEL_ACCESS_TOKEN
 from mongo import history_collection
 from resources import base_prompt, cycu_resources
 from llm import call_groq_llm
+from depression_scale import start_depression_test, handle_depression_response
 
 
 from datetime import datetime
@@ -25,6 +26,28 @@ configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 def handle_text(event):
     user_input = event.message.text.strip()  # 使用者輸入文字
     user_id = event.source.user_id           # 使用者的 LINE ID
+
+    # === 憂鬱量表 ===
+    if user_input == "我要做憂鬱量表":
+        bubble = start_depression_test(user_id)
+        line_bot_api.reply_message(
+            ReplyMessageRequest(reply_token=event.reply_token, messages=[bubble])
+        )
+        return
+
+    # === 處理作答 ===
+    result, response = handle_depression_response(user_id, user_input)
+    if result is not None:
+        if result == "next":
+            line_bot_api.reply_message(
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[response])
+            )
+        else:
+            line_bot_api.reply_message(
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=response)])
+            )
+        return
+
 
     # === 查詢資源地點（比對關鍵字）===
     found_location = None

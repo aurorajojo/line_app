@@ -20,9 +20,10 @@ user_state = {}
 # 建立 bubble flex message
 def create_question_bubble(user_id: str, index: int) -> FlexMessage:
     q = questions[index]
-    contents = {
+
+    bubble = {
         "type": "bubble",
-        "direction": "ltr",
+        "direction": "rtl",
         "header": {
             "type": "box",
             "layout": "vertical",
@@ -31,8 +32,9 @@ def create_question_bubble(user_id: str, index: int) -> FlexMessage:
                 "text": "台灣人憂鬱症量表",
                 "weight": "bold",
                 "size": "lg",
+                "color": "#262222FF",
                 "align": "center",
-                "color": "#262222FF"
+                "contents": []
             }]
         },
         "body": {
@@ -44,25 +46,27 @@ def create_question_bubble(user_id: str, index: int) -> FlexMessage:
                     "text": f"Q : {q}",
                     "weight": "bold",
                     "size": "lg",
-                    "align": "center"
-                }
-            ] + [
-                {
-                    "type": "button",
-                    "style": "primary",
-                    "color": "#8D8684FF",
-                    "action": {
-                        "type": "message",
-                        "label": label,
-                        "text": str(score)
-                    }
-                } for label, score in [
-                    ("沒有或極少 每周: 1天以下", 0),
-                    ("有時侯 每周: 1～2天", 1),
-                    ("時常 每周: 3～4天", 2),
-                    ("常常或總是 每周: 5～7天", 3)
-                ]
-            ] + [
+                    "align": "center",
+                    "contents": []
+                },
+                *[
+                    {
+                        "type": "button",
+                        "action": {
+                            "type": "message",
+                            "label": label,
+                            "text": str(score)
+                        },
+                        "color": "#8D8684FF",
+                        "style": "primary",
+                        "height": "md" if score == 3 else "sm"
+                    } for label, score in [
+                        ("沒有或極少 每周: 1天以下", 0),
+                        ("有時侯 每周: 1～2天", 1),
+                        ("時常 每周: 3～4天", 2),
+                        ("常常或總是 每周: 5～7天", 3)
+                    ]
+                ],
                 {
                     "type": "separator",
                     "margin": "xxl",
@@ -83,12 +87,13 @@ def create_question_bubble(user_id: str, index: int) -> FlexMessage:
             "layout": "vertical",
             "contents": [{
                 "type": "text",
-                "text": f"第 {index+1} 題 / 共 18 題"
+                "text": f"第 {index+1} 題 / 共 {len(questions)} 題",
+                "contents": []
             }]
         }
     }
 
-    return FlexMessage(alt_text="台灣人憂鬱症量表", contents=contents)
+    return FlexMessage(alt_text="台灣人憂鬱症量表", contents=bubble)
 
 # 根據使用者輸入更新進度
 def handle_depression_response(user_id: str, message_text: str):

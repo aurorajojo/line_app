@@ -1,8 +1,6 @@
-# depression_scale.py
+from linebot.v3.messaging import FlexMessage, FlexContainer
+import json
 
-from linebot.v3.messaging import FlexMessage
-
-# 憂鬱量表題目
 questions = [
     "我常常覺得想哭", "我覺得心情不好", "我覺得比以前容易發脾氣", "我睡不好",
     "我覺得不想吃東西", "我覺得胸口悶悶的 (心肝頭或胸坎綁綁)",
@@ -14,141 +12,70 @@ questions = [
     "我覺得自己很沒用"
 ]
 
-# 紀錄使用者進度（可改用 MongoDB 等儲存）
+# 用戶答題暫存
 user_state = {}
 
-# 建立 bubble flex message
-def create_question_bubble(user_id: str, index: int) -> FlexMessage:
-    q = questions[index]
-
-    bubble = {
+def make_question_bubble(question_text, q_number):
+    bubble_json = {
         "type": "bubble",
-        "direction": "rtl",
-        "header": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [{
-                "type": "text",
-                "text": "台灣人憂鬱症量表",
-                "weight": "bold",
-                "size": "lg",
-                "color": "#262222FF",
-                "align": "center",
-                "contents": []
-            }]
-        },
         "body": {
             "type": "box",
             "layout": "vertical",
+            "spacing": "sm",
             "contents": [
-                {
-                    "type": "text",
-                    "text": f"Q : {q}",
-                    "weight": "bold",
-                    "size": "lg",
-                    "align": "center",
-                    "contents": []
-                },
-                *[
-                    {
-                        "type": "button",
-                        "action": {
-                            "type": "message",
-                            "label": label,
-                            "text": str(score)
-                        },
-                        "color": "#8D8684FF",
-                        "style": "primary",
-                        "height": "md" if score == 3 else "sm"
-                    } for label, score in [
-                        ("沒有或極少 每周: 1天以下", 0),
-                        ("有時侯 每周: 1～2天", 1),
-                        ("時常 每周: 3～4天", 2),
-                        ("常常或總是 每周: 5～7天", 3)
-                    ]
-                ],
-                {
-                    "type": "separator",
-                    "margin": "xxl",
-                    "color": "#000000FF"
-                },
-                {
-                    "type": "button",
-                    "action": {
-                        "type": "message",
-                        "label": "結束測驗",
-                        "text": "結束測驗"
-                    }
-                }
+                {"type": "text", "text": "台灣人憂鬱症量表", "wrap": True, "weight": "bold", "size": "xl"},
+                {"type": "text", "text": f"Q{q_number}: {question_text}", "margin": "none", "size": "xl"}
             ]
         },
         "footer": {
             "type": "box",
             "layout": "vertical",
-            "contents": [{
-                "type": "text",
-                "text": f"第 {index+1} 題 / 共 {len(questions)} 題",
-                "contents": []
-            }]
+            "spacing": "sm",
+            "contents": [
+                {"type": "button", "style": "primary", "action": {"type": "message", "label": "沒有或極少 每周: 1天以下", "text": "0"}, "color": "#8D8684FF"},
+                {"type": "button", "style": "primary", "action": {"type": "message", "label": "有時侯 每周: 1～2天", "text": "1"}, "color": "#8D8684FF"},
+                {"type": "button", "style": "primary", "action": {"type": "message", "label": "時常 每周: 3～4天", "text": "2"}, "color": "#8D8684FF"},
+                {"type": "button", "style": "primary", "action": {"type": "message", "label": "常常或總是 每周: 5～7天", "text": "3"}, "color": "#8D8684FF"},
+                {"type": "separator"},
+                {"type": "button", "action": {"type": "message", "label": "結束測驗", "text": "結束測驗"}, "color": "#000000FF"}
+            ]
         }
     }
+    return FlexMessage(alt_text=f"台灣人憂鬱症量表 - 第{q_number}題",
+                       contents=FlexContainer.from_json(json.dumps(bubble_json)))
 
-    return FlexMessage(alt_text="台灣人憂鬱症量表", contents=bubble)
+def start_depression_test(user_id):
+    user_state[user_id] = {
+        "current_q": 0,
+        "scores": []
+    }
+    return make_question_bubble(questions[0], 1)
 
-# 根據使用者輸入更新進度
-def handle_depression_response(user_id: str, message_text: str):
+def handle_depression_response(user_id, user_input):
     if user_id not in user_state:
+        # 尚未開始測驗，或重新開始
         return None, None
 
-    state = user_state[user_id]
+    if user_input == "結束測驗":
+        total_score = sum(user_state[user_id]["scores"])
+        del user_state[user_id]
+        return "end", f"測驗結束"
 
-    if message_text == "結束測驗":
-        total = state["score"]
-        user_state.pop(user_id)
-        return total, "您已中止測驗。總分為：" + str(total)
+    # 期望輸入 0~3 的字串
+    if user_input not in ["0", "1", "2", "3", "結束測驗"]:
+        # 非預期輸入，回覆提醒文字
+        return "invalid", "請點選下方選項按鈕作答或結束測驗。"
 
-    if message_text not in ["0", "1", "2", "3"]:
-        return None, "請使用按鈕選擇數值來作答唷～"
+    # 紀錄分數
+    score = int(user_input)
+    user_state[user_id]["scores"].append(score)
+    user_state[user_id]["current_q"] += 1
+    idx = user_state[user_id]["current_q"]
 
-    state["score"] += int(message_text)
-    state["current"] += 1
-
-    if state["current"] >= len(questions):
-        total = state["score"]
-        user_state.pop(user_id)
-
-        # 評估結果
-        if total <= 8:
-            result = (
-                "真令人羨慕！你目前的情緒狀態很穩定，是個懂得適時調整情緒及紓解壓力的人，繼續保持下去。"
-            )
-        elif total <= 14:
-            result = (
-                "最近的情緒是否起伏不定？給自己多點關心，多注意情緒的變化，做適時的處理，比較不會陷入憂鬱情緒。"
-            )
-        elif total <= 18:
-            result = (
-                "你是不是有許多事壓在心上，肩上總覺得很沉重？千萬別再「撐」了！"
-                "趕快找個有相同經驗的朋友聊聊，給心找個出口。"
-            )
-        elif total <= 28:
-            result = (
-                "現在的你必定無法展露笑容，一肚子苦惱及煩悶，趕緊找專業機構或醫療單位協助。"
-            )
-        else:
-            result = (
-                "你是不是會不由自主地沮喪、難過，無法掙脫？"
-                "因為你的心已「感冒」，心病需要心藥醫，"
-                "請儘早到醫院找專業且可信賴的醫師檢查，"
-                "透過他們的診療，你將不再覺得孤單、無助。"
-            )
-
-
-        return total, f"測驗完成，您的總分為 {total} 分。\n結果：{result}"
-
-    return "next", create_question_bubble(user_id, state["current"])
-
-# 啟動測驗
-def start_depression_test(user_id: str):
-    user_state[user_id] = {"score": 0, "current": 0}
-    return create_question_bubble(user_id, 0)
+    if idx >= len(questions):
+        total_score = sum(user_state[user_id]["scores"])
+        del user_state[user_id]
+        return "end", f"恭喜完成量表！你的總分是 {total_score} 分。建議適時尋求專業協助。"
+    else:
+        # 回下一題 FlexMessage
+        return "next", make_question_bubble(questions[idx], idx + 1)

@@ -27,36 +27,6 @@ def handle_text(event):
     user_input = event.message.text.strip()  # 使用者輸入文字
     user_id = event.source.user_id           # 使用者的 LINE ID
 
-    # === 憂鬱量表 ===
-    if user_input == "我要做憂鬱量表":
-        bubble = start_depression_test(user_id)
-        line_bot_api.reply_message(
-            ReplyMessageRequest(reply_token=event.reply_token, messages=[bubble])
-        )
-        return
-
-    # === 處理作答 ===
-    result, response = handle_depression_response(user_id, user_input)
-    if result is not None:
-        if result == "next":
-            line_bot_api.reply_message(
-                ReplyMessageRequest(reply_token=event.reply_token, messages=[response])
-            )
-        else:
-            line_bot_api.reply_message(
-                ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=response)])
-            )
-        return
-
-
-    # === 查詢資源地點（比對關鍵字）===
-    found_location = None
-    for category, items in cycu_resources.get("中原大學資源", {}).items():
-        for name, info in items.items():
-            if name in user_input and "地點" in info:
-                found_location = f"{name}的地點是：{info['地點']}" if info["地點"] else f"{name}沒有地點資料喔！"
-                break
-
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
         line_bot_api.show_loading_animation(  #延遲動畫
@@ -65,6 +35,37 @@ def handle_text(event):
                 loadingSeconds=5
             )
         )
+        
+        # === 憂鬱量表 ===
+        if user_input == "我要做憂鬱量表":
+            bubble = start_depression_test(user_id)
+            line_bot_api.reply_message(
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[bubble])
+            )
+            return
+
+        # === 處理作答 ===
+        result, response = handle_depression_response(user_id, user_input)
+        if result is not None:
+            if result == "next":
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(reply_token=event.reply_token, messages=[response])
+                )
+            else:
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=response)])
+                )
+            return
+
+
+        # === 查詢資源地點（比對關鍵字）===
+        found_location = None
+        for category, items in cycu_resources.get("中原大學資源", {}).items():
+            for name, info in items.items():
+                if name in user_input and "地點" in info:
+                    found_location = f"{name}的地點是：{info['地點']}" if info["地點"] else f"{name}沒有地點資料喔！"
+                    break
+
 
         # 回覆地點查詢
         if found_location:

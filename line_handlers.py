@@ -35,7 +35,7 @@ def handle_text(event):
                 loadingSeconds=5
             )
         )
-        
+
         # === 憂鬱量表 ===
         if user_input == "我要做憂鬱量表":
             bubble = start_depression_test(user_id)
@@ -51,7 +51,11 @@ def handle_text(event):
                 line_bot_api.reply_message(
                     ReplyMessageRequest(reply_token=event.reply_token, messages=[response])
                 )
-            else:
+            elif result == "end":
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=response)])
+                )
+            elif result == "invalid":
                 line_bot_api.reply_message(
                     ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=response)])
                 )

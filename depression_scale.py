@@ -24,7 +24,7 @@ def make_question_bubble(question_text, q_number):
             "spacing": "sm",
             "contents": [
                 {"type": "text", "text": "台灣人憂鬱症量表", "wrap": True, "weight": "bold", "size": "xl"},
-                {"type": "text", "text": f"Q{q_number}: {question_text}", "margin": "none", "size": "xl", "wrap": True}
+                {"type": "text", "text": f"{question_text}", "margin": "none", "size": "xl", "wrap": True}
             ]
         },
         "footer": {
@@ -38,7 +38,7 @@ def make_question_bubble(question_text, q_number):
                 {"type": "button", "style": "primary", "action": {"type": "message", "label": "常常或總是 每周: 5～7天", "text": "3"}, "color": "#8D8684FF"},
                 {"type": "separator"},
                 {"type": "button", "action": {"type": "message", "label": "結束測驗", "text": "結束測驗"}, "color": "#000000FF"},
-                {"type": "text", "text": f"第Q{q_number}題，共18題", "align": "end"}
+                {"type": "text", "text": f"第{q_number}題，共18題", "align": "end"}
             ]
         }
     }

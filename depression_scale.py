@@ -37,7 +37,8 @@ def make_question_bubble(question_text, q_number):
                 {"type": "button", "style": "primary", "action": {"type": "message", "label": "時常 每周: 3～4天", "text": "2"}, "color": "#8D8684FF"},
                 {"type": "button", "style": "primary", "action": {"type": "message", "label": "常常或總是 每周: 5～7天", "text": "3"}, "color": "#8D8684FF"},
                 {"type": "separator"},
-                {"type": "button", "action": {"type": "message", "label": "結束測驗", "text": "結束測驗"}, "color": "#000000FF"}
+                {"type": "button", "action": {"type": "message", "label": "結束測驗", "text": "結束測驗"}, "color": "#000000FF"},
+                {"type": "text", "text": f"第Q{q_number}題，共18題", "align": "end"}
             ]
         }
     }

@@ -24,7 +24,7 @@ def make_question_bubble(question_text, q_number):
             "spacing": "sm",
             "contents": [
                 {"type": "text", "text": "台灣人憂鬱症量表", "wrap": True, "weight": "bold", "size": "xl"},
-                {"type": "text", "text": f"Q:{question_text}", "margin": "none", "size": "l", "wrap": True}
+                {"type": "text", "text": f"Q:{question_text}", "margin": "none", "size": "lg", "wrap": True}
             ]
         },
         "footer": {

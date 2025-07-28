@@ -42,7 +42,7 @@ def handle_text(event):
         if user_input == "我要看情緒分析":
             dashboard_text = generate_text_dashboard(user_id)
             line_bot_api.reply_message(
-                reply_token=event.reply_token,messages=[TextMessage(text=dashboard_text)]
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=dashboard_text)] )
             )
 
         # === 憂鬱量表 ===

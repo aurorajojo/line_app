@@ -19,6 +19,15 @@
 - 封裝與語言模型（Groq / LLaMA）溝通的邏輯。
 - 定義如何將使用者訊息送出並取得回應。
 
+### `emotion_strategy_utils.py`
+- 從文字中 `擷取情緒標記` 和 `解析策略編號` 的模組。
+
+### `emotion_dashboard.py`
+- 根據使用者歷史對話紀錄，統計每種情緒出現的頻率，並產生圖文並茂的 `文字情緒儀表板` 。
+
+### `depression_scale.py`
+- 顯示 18 題 `台灣人憂鬱症量表問題` ，讓使用者逐題作答。
+
 ### `render_wake_up.py`
 - 定時 ping Render 平台以防止伺服器自動休眠。
 

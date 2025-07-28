@@ -12,6 +12,7 @@ from resources import base_prompt, cycu_resources
 from llm import call_groq_llm
 from depression_scale import start_depression_test, handle_depression_response
 from emotion_strategy_utils import extract_emotion_from_reply, extract_strategies
+from emotion_dashboard import generate_text_dashboard
 
 
 from datetime import datetime
@@ -37,26 +38,33 @@ def handle_text(event):
             )
         )
 
+        # === 情緒分析 ===
+        if user_input == "我要看情緒分析":
+            dashboard_text = generate_text_dashboard(user_id)
+            line_bot_api.reply_message(
+                reply_token=event.reply_token,messages=[TextMessage(text=dashboard_text)]
+            )
+
         # === 憂鬱量表 ===
-        if user_input == "我要做憂鬱症量表":
+        elif user_input == "我要做憂鬱症量表":
             bubble = start_depression_test(user_id)
             line_bot_api.reply_message(
-                ReplyMessageRequest(reply_token=event.reply_token, messages=[bubble])
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[bubble])   # 顯示量表 FlexMessage 按鈕
             )
             return
 
         # === 處理作答 ===
         result, response = handle_depression_response(user_id, user_input)
         if result is not None:
-            if result == "next":
+            if result == "next":      # 下一題 FlexMessage 按鈕
                 line_bot_api.reply_message(
                     ReplyMessageRequest(reply_token=event.reply_token, messages=[response])
                 )
-            elif result == "end":
+            elif result == "end":     # 結束測驗
                 line_bot_api.reply_message(
                     ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=response)])
                 )
-            elif result == "invalid":
+            elif result == "invalid": # 非預期輸入，回覆提醒文字
                 line_bot_api.reply_message(
                     ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=response)])
                 )

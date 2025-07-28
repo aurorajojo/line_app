@@ -37,8 +37,8 @@ def generate_text_dashboard(user_id):
     percent = round(main_count / total * 100)
 
     # 取最新一筆資料的日期
-    latest = sorted(user_data, key=lambda d: d.get("timestamp", {}).get("$date", ""))[-1]
-    latest_date = latest.get("timestamp", {}).get("$date", "")[:10] or "未知"
+    latest = sorted(user_data, key=lambda d: d.get("timestamp", datetime.min))[-1]
+    latest_date = latest["timestamp"].strftime("%Y-%m-%d") if "timestamp" in latest else "未知"
 
     lines = [
         "🧠 情緒儀表板",

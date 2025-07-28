@@ -44,7 +44,8 @@ def handle_text(event):
             line_bot_api.reply_message(
                 ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=dashboard_text)] )
             )
-
+            return
+            
         # === 憂鬱量表 ===
         elif user_input == "我要做憂鬱症量表":
             bubble = start_depression_test(user_id)

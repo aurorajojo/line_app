@@ -11,6 +11,7 @@ from mongo import history_collection
 from resources import base_prompt, cycu_resources
 from llm import call_groq_llm
 from depression_scale import start_depression_test, handle_depression_response
+from emotion_strategy_utils import extract_emotion_from_reply, extract_strategies
 
 
 from datetime import datetime
@@ -98,11 +99,16 @@ def handle_text(event):
 
 
         # === 儲存對話紀錄進 MongoDB ===
+        emotion_tag = extract_emotion_from_reply(reply)  # 找情緒
+        strategy_tags = extract_strategies(reply)        # 找策略
+
         history_collection.insert_one({
-            "user_id": user_id,
-            "user_input": user_input,
-            "reply": reply,
-            "timestamp": datetime.now()
+            "user_id": user_id,           # 使用者id
+            "user_input": user_input,     # 使用者輸入
+            "reply": reply,               # llm回覆
+            "emotion_tag": emotion_tag,   # 情緒
+            "strategy": strategy_tags,    # 策略
+            "timestamp": datetime.now()   # 時間
         })
         
         # === 回覆使用者 ===

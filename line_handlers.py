@@ -13,6 +13,8 @@ from llm import call_groq_llm
 from depression_scale import start_depression_test, handle_depression_response
 from emotion_strategy_utils import extract_emotion_from_reply, extract_strategies
 from emotion_dashboard import generate_text_dashboard
+from gaming_disorder_scale import start_gaming_test, handle_gaming_response
+
 
 
 from datetime import datetime
@@ -45,7 +47,7 @@ def handle_text(event):
                 ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=dashboard_text)] )
             )
             return
-            
+        
         # === 憂鬱量表 ===
         elif user_input == "我要做憂鬱症量表":
             bubble = start_depression_test(user_id)
@@ -54,6 +56,14 @@ def handle_text(event):
             )
             return
 
+        # === 遊戲成癮量表 ===
+        elif user_input == "我要做遊戲成癮量表":
+            bubble = start_gaming_test(user_id)
+            line_bot_api.reply_message(
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[bubble])
+            )
+            return     
+        
         # === 處理作答 ===
         result, response = handle_depression_response(user_id, user_input)
         if result is not None:
@@ -69,8 +79,26 @@ def handle_text(event):
                 line_bot_api.reply_message(
                     ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=response)])
                 )
+            return 
+        
+        # === 處理遊戲量表作答 ===
+        result, response = handle_gaming_response(user_id, user_input)
+        if result is not None:
+            if result == "next":
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(reply_token=event.reply_token, messages=[response])
+                )
+            elif result == "end":
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=response)])
+                )
+            elif result == "invalid":
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=response)])
+                )
             return
 
+        
 
         # === 查詢資源地點（比對關鍵字）===
         found_location = None

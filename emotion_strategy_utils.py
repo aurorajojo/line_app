@@ -2,6 +2,17 @@
 
 import re
 
+NUMBER_TO_EMOTION = {
+    "1": "焦慮",
+    "2": "悲傷",
+    "3": "憤怒",
+    "4": "恐懼",
+    "5": "厭惡",
+    "6": "羞愧",
+    "7": "無法判斷",
+    "8": "其他"
+}
+
 strategy_map = {
     "1": "問句引導",
     "2": "轉述或改寫",
@@ -15,13 +26,20 @@ strategy_map = {
 
 def extract_emotion_from_reply(reply_text):
     """
-    從 reply 文字中擷取第一個被 [] 包住的情緒關鍵字
+    從 reply 文字中擷取第一個被 [] 包住的情緒關鍵字或編號
     可辨識的情緒有：焦慮、悲傷、憤怒、恐懼、厭惡、羞愧、其他、無法判斷
+    以及數字代號1-8
     找不到則回傳 '無法判斷'
     """
-    match = re.search(r"\[(焦慮|悲傷|憤怒|恐懼|厭惡|羞愧|其他|無法判斷)\]", reply_text)
+    pattern = r"\[([12345678]|焦慮|悲傷|憤怒|恐懼|厭惡|羞愧|其他|無法判斷)\]"
+    match = re.search(pattern, reply_text)
     if match:
-        return match.group(1)
+        val = match.group(1)
+        # 如果是數字，轉成中文情緒
+        if val in NUMBER_TO_EMOTION:
+            return NUMBER_TO_EMOTION[val]
+        else:
+            return val  # 已經是中文情緒
     else:
         return "無法判斷"
 

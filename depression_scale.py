@@ -1,6 +1,10 @@
+# depression_scale.py
+# ===== 處理憂鬱症量表的執行 ===== 
+
 from linebot.v3.messaging import FlexMessage, FlexContainer
 import json
 
+# 台灣人憂鬱症量表題目，共18題
 questions = [
     "我常常覺得想哭", "我覺得心情不好", "我覺得比以前容易發脾氣", "我睡不好",
     "我覺得不想吃東西", "我覺得胸口悶悶的 (心肝頭或胸坎綁綁)",
@@ -15,6 +19,7 @@ questions = [
 # 用戶答題暫存
 user_state = {}
 
+# 建立每一題的 Flex Bubble 結構
 def make_question_bubble(question_text, q_number):
     bubble_json = {
         "type": "bubble",
@@ -45,13 +50,15 @@ def make_question_bubble(question_text, q_number):
     return FlexMessage(alt_text=f"台灣人憂鬱症量表 - 第{q_number}題",
                        contents=FlexContainer.from_json(json.dumps(bubble_json)))
 
+# 開始測驗，初始化使用者狀態
 def start_depression_test(user_id):
     user_state[user_id] = {
-        "current_q": 0,
-        "scores": []
+        "current_q": 0,   # 當前題號索引
+        "scores": []      # 存放使用者各題得分
     }
     return make_question_bubble(questions[0], 1)
 
+# 處理使用者每一題的回答
 def handle_depression_response(user_id, user_input):
     if user_id not in user_state:
         # 尚未開始測驗，或重新開始
@@ -73,10 +80,23 @@ def handle_depression_response(user_id, user_input):
     user_state[user_id]["current_q"] += 1
     idx = user_state[user_id]["current_q"]
 
-    if idx >= len(questions):
+    if idx >= len(questions):   # 量表結束，計算分數
         total_score = sum(user_state[user_id]["scores"])
         del user_state[user_id]
-        return "end", f"恭喜完成量表！你的總分是 {total_score} 分。建議適時尋求專業協助。"
+
+        if total_score <= 8:
+            feedback = "真令人羨慕/你目前的情緒狀態很穩定，是個懂得適時調整情緒及紓解壓力的人，繼續保持下去。"
+        elif total_score <= 14:
+            feedback = "最近的情緒是否起伏下定?給自已多點關心，多注意情緒的變化，做適時的處理，比較不會陷入憂鬱情緒。"
+        elif total_score <= 18:
+            feedback = "你是不是有許多事壓在心上，肩上總覺得很沉重?千萬別再「撐」了!趕快找個有相同經驗的朋友聊聊，給心找個出口。"
+        elif total_score <= 28:
+            feedback = "現在的你必定無法展露笑容，一肚子苦惱及煩悶，趕緊找專業機構或醫療單位協助。"
+        else:
+            feedback = "你是不是會不由自主的沮喪、難過，無法掙脫?因為你的心已「感冒」，心病需要心藥醫，緊到醫院找專業及可信賴的醫檢查，透過他們的診療，你將不再覺得孤單、無助!"
+
+        return "end", f"恭喜完成量表！你的總分是 {total_score} 分。\n {feedback}"
+    
     else:
         # 回下一題 FlexMessage
         return "next", make_question_bubble(questions[idx], idx + 1)

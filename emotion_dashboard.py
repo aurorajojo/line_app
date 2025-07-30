@@ -55,7 +55,7 @@ def generate_text_dashboard(user_id):
 
     lines = [
         "🧠 情緒儀表板",
-        "─" * 40,
+        "─" * 10,
         f"📅 日期：{latest_date}",
         f"🎯 主要情緒：{main_emotion}（{percent}%）→ {character}",
         "📊 情緒血條："
@@ -67,5 +67,5 @@ def generate_text_dashboard(user_id):
     return "\n".join(lines)
 
 def bar(percent):
-    length = int(percent / 5)
-    return "■" * length + "□" * (20 - length)
+    length = int(percent / 10)
+    return "■" * length + "□" * (10 - length)

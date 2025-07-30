@@ -4,17 +4,6 @@ from datetime import datetime
 from collections import Counter
 from mongo import history_collection
 
-EMOTION_MAPPING = {
-    "[1]": "焦慮",
-    "[2]": "悲傷",
-    "[3]": "憤怒",
-    "[4]": "恐懼",
-    "[5]": "厭惡",
-    "[6]": "羞愧",
-    "[7]": "無法判斷",
-    "[8]": "其他"
-}
-
 EMOTION_CHARACTERS = {
     "焦慮": "🐇 小兔子焦焦",
     "悲傷": "🐟 小魚淚淚",
@@ -36,9 +25,8 @@ def generate_text_dashboard(user_id):
     emotion_counter = Counter()
     for doc in user_data:
         emo = doc.get("emotion_tag", "").strip()
-        emotion = EMOTION_MAPPING.get(emo, "")
-        if emotion and emotion != "無法判斷":
-            emotion_counter[emotion] += 1
+        if emo and emo != "無法判斷":
+            emotion_counter[emo] += 1
 
     if not emotion_counter:  # 沒情緒
         return "沒有明確的情緒標記，無法產生儀表板。"

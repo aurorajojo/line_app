@@ -1,3 +1,6 @@
+# gaming_disorder_scale.py
+# ===== 處理網路遊戲成癮量表的執行 ===== 
+
 from linebot.v3.messaging import FlexMessage, FlexContainer
 import json
 
@@ -18,6 +21,7 @@ questions = [
 # 使用者作答狀態暫存
 user_state = {}
 
+# 題目的框架及按鈕的json
 def make_question_bubble(question_text, q_number):
     bubble_json = {
         "type": "bubble",
@@ -49,14 +53,41 @@ def make_question_bubble(question_text, q_number):
         contents=FlexContainer.from_json(json.dumps(bubble_json))
     )
 
-def start_gaming_test(user_id):
+def start_gaming_test(user_id):  # 開始作答
     user_state[user_id] = {
-        "current_q": 0,
-        "scores": []
+        "current_q": 0,         # 目前作答來到的題數
+        "scores": []            # 分數
     }
-    return make_question_bubble(questions[0], 1)
+    return make_question_bubble(questions[0], 1)  # 呼叫函式，回傳題目的框架及按鈕的json
 
-def check_gaming_disorder(scores):
+
+def handle_gaming_response(user_id, user_input):
+    if user_id not in user_state:
+        return None, None  # 尚未開始
+
+    if user_input == "結束測驗":                  # 使用者提前終止測驗
+        del user_state[user_id]
+        return "end", "結束測驗"
+
+    if user_input not in ["0", "1", "2"]:         # 非預期輸入，回覆提醒文字
+        return "invalid", "請點選上方題目下的按鈕作答，或選擇「結束測驗」。"
+
+    # 紀錄分數
+    score = int(user_input)
+    user_state[user_id]["scores"].append(score)  # 計分數
+    user_state[user_id]["current_q"] += 1        # 記題號
+    idx = user_state[user_id]["current_q"]
+
+    if idx >= len(questions):     # 判斷是否完成量表
+        total_score = sum(user_state[user_id]["scores"])
+        result_text = get_final_result(user_state[user_id]["scores"])  # 呼叫函式，判斷量表結果
+        del user_state[user_id]
+        return "end", f"恭喜完成量表！你的總分是 {total_score} 分。\n{result_text}" # 回傳結果
+    
+    else:                         # 尚未完成量表，繼續作答
+        return "next", make_question_bubble(questions[idx], idx + 1)
+
+def check_gaming_disorder(scores): # 遊戲結束，計算成績
     criteria_met = 0
     for i, score in enumerate(scores):
         if i <= 7:  # 題目 1-8
@@ -68,36 +99,9 @@ def check_gaming_disorder(scores):
                 break
     return criteria_met >= 5  # 符合 5 項即為遊戲成癮
 
-def handle_gaming_response(user_id, user_input):
-    if user_id not in user_state:
-        return None, None  # 尚未開始
-
-    if user_input == "結束測驗":
-        total_score = sum(user_state[user_id]["scores"])
-        result_text = get_final_result(user_state[user_id]["scores"])
-        del user_state[user_id]
-        return "end", f"你已結束測驗。\n總分：{total_score}\n{result_text}"
-
-    if user_input not in ["0", "1", "2"]:
-        return "invalid", "請點選下方的按鈕作答，或選擇「結束測驗」。"
-
-    # 紀錄分數
-    score = int(user_input)
-    user_state[user_id]["scores"].append(score)
-    user_state[user_id]["current_q"] += 1
-    idx = user_state[user_id]["current_q"]
-
-    if idx >= len(questions):
-        total_score = sum(user_state[user_id]["scores"])
-        result_text = get_final_result(user_state[user_id]["scores"])
-        del user_state[user_id]
-        return "end", f"恭喜完成量表！你的總分是 {total_score} 分。\n{result_text}"
-    else:
-        return "next", make_question_bubble(questions[idx], idx + 1)
-
 def get_final_result(scores):
     is_disordered = check_gaming_disorder(scores)
-    if is_disordered:
+    if is_disordered:          # 有網路遊戲成癮
         return "你可能有網路遊戲成癮的傾向，建議與專業人員進一步討論。"
-    else:
+    else:                      # 沒有網路遊戲成癮
         return "你目前無明顯的網路遊戲成癮傾向，請持續保持良好的使用習慣。"

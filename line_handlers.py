@@ -14,7 +14,7 @@ from depression_scale import start_depression_test, handle_depression_response
 from emotion_strategy_utils import extract_emotion_from_reply, extract_strategies
 from emotion_dashboard import generate_text_dashboard
 from gaming_disorder_scale import start_gaming_test, handle_gaming_response
-
+from extract_topic import extract_topic
 
 
 from datetime import datetime
@@ -138,6 +138,7 @@ def handle_text(event):
         # === 儲存對話紀錄進 MongoDB ===
         emotion_tag = extract_emotion_from_reply(reply)  # 找情緒
         strategy_tags = extract_strategies(reply)        # 找策略
+        topic_tags = extract_topic(user_input, user_id)  # 找主題
 
         history_collection.insert_one({
             "user_id": user_id,           # 使用者id
@@ -145,6 +146,7 @@ def handle_text(event):
             "reply": reply,               # llm回覆
             "emotion_tag": emotion_tag,   # 情緒
             "strategy": strategy_tags,    # 策略
+            "topic": topic_tags,          # 主題
             "timestamp": datetime.now()   # 時間
         })
         

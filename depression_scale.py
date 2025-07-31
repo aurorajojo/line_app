@@ -72,7 +72,7 @@ def handle_depression_response(user_id, user_input):
     # 期望輸入 0~3 的字串
     if user_input not in ["0", "1", "2", "3", "結束測驗"]:
         # 非預期輸入，回覆提醒文字
-        return "invalid", "請點選下方選項按鈕作答或結束測驗。"
+        return "invalid", "請點選上方選項按鈕作答或結束測驗。"
 
     # 紀錄分數
     score = int(user_input)

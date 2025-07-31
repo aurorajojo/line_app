@@ -14,6 +14,7 @@ from depression_scale import start_depression_test, handle_depression_response, 
 from emotion_strategy_utils import extract_emotion_from_reply, extract_strategies
 from emotion_dashboard import generate_text_dashboard
 from gaming_disorder_scale import start_gaming_test, handle_gaming_response
+from gaming_disorder_scale import user_state as user_state1
 from extract_topic import extract_topic
 
 
@@ -42,7 +43,7 @@ def handle_text(event):
 
         # === 防呆判斷：輸入 0,1,2,3 或 結束測驗，卻尚未開始量表 ===
         if user_input in ["0", "1", "2", "3", "結束測驗"]:
-            if user_id not in user_state:
+            if user_id not in user_state and user_id not in user_state1:
                 line_bot_api.reply_message(
                     ReplyMessageRequest(
                         reply_token=event.reply_token, messages=[TextMessage(text="看起來您想回答量表的問題喔～請先從圖文選單中選擇想進行的量表，才能開始施測喔！")]

@@ -10,7 +10,7 @@ from config import CHANNEL_SECRET, CHANNEL_ACCESS_TOKEN
 from mongo import history_collection
 from resources import base_prompt, cycu_resources
 from llm import call_groq_llm
-from depression_scale import start_depression_test, handle_depression_response
+from depression_scale import start_depression_test, handle_depression_response, user_state
 from emotion_strategy_utils import extract_emotion_from_reply, extract_strategies
 from emotion_dashboard import generate_text_dashboard
 from gaming_disorder_scale import start_gaming_test, handle_gaming_response
@@ -40,10 +40,20 @@ def handle_text(event):
             )
         )
 
+        # === 防呆判斷：輸入 0,1,2,3 或 結束測驗，卻尚未開始量表 ===
+        if user_input in ["0", "1", "2", "3", "結束測驗"]:
+            if user_id not in user_state:
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token, messages=[TextMessage(text="看起來您想回答量表的問題喔～請先從圖文選單中選擇想進行的量表，才能開始施測喔！")]
+                    )
+                )
+                return
+
         # === 情緒分析 ===
         if user_input == "我要看情緒分析":
             dashboard_text = generate_text_dashboard(user_id)
-            line_bot_api.reply_message(
+            line_bot_api.reply_message(       # 回傳情緒儀表板
                 ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=dashboard_text)] )
             )
             return
@@ -60,7 +70,7 @@ def handle_text(event):
         elif user_input == "我要做遊戲成癮量表":
             bubble = start_gaming_test(user_id)
             line_bot_api.reply_message(
-                ReplyMessageRequest(reply_token=event.reply_token, messages=[bubble])
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[bubble])   # 顯示量表 FlexMessage 按鈕
             )
             return     
         
@@ -84,21 +94,20 @@ def handle_text(event):
         # === 處理遊戲量表作答 ===
         result, response = handle_gaming_response(user_id, user_input)
         if result is not None:
-            if result == "next":
+            if result == "next":      # 下一題 FlexMessage 按鈕
                 line_bot_api.reply_message(
                     ReplyMessageRequest(reply_token=event.reply_token, messages=[response])
                 )
-            elif result == "end":
+            elif result == "end":     # 結束測驗
                 line_bot_api.reply_message(
                     ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=response)])
                 )
-            elif result == "invalid":
+            elif result == "invalid": # 非預期輸入，回覆提醒文字
                 line_bot_api.reply_message(
                     ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=response)])
                 )
             return
 
-        
 
         # === 查詢資源地點（比對關鍵字）===
         found_location = None

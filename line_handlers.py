@@ -19,7 +19,7 @@ from extract_topic import extract_topic
 from vectorstore_loader import load_vectorstore
 
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 import torch
 from datetime import datetime
 import json

@@ -7,7 +7,7 @@
 """
 
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 import torch
 
 def load_vectorstore(
@@ -30,3 +30,4 @@ def load_vectorstore(
 
     # 回傳向量庫物件，供外部直接使用
     return vectorstore
+

@@ -9,3 +9,4 @@ langchain-community
 torch
 transformers
 faiss-cpu
+sentence-transformers

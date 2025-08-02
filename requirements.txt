@@ -4,8 +4,8 @@ requests
 pymongo
 certifi
 gunicorn
-langchain==0.0.269
-langchain-community==0.0.45
-torch>=1.13.1
-transformers>=4.30.0
-faiss-cpu>=1.7.3
+langchain
+langchain-community
+torch
+transformers
+faiss-cpu

@@ -16,11 +16,17 @@ from emotion_dashboard import generate_text_dashboard
 from gaming_disorder_scale import start_gaming_test, handle_gaming_response
 from gaming_disorder_scale import user_state as user_state1
 from extract_topic import extract_topic
+from vector_search import query_vectorstore
 
-
+from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
+import torch
 from datetime import datetime
 import json
 import time
+
+# 初始化向量庫（啟動時載入一次）
+vectorstore = load_vectorstore()
 
 # 設定 LINE Handler 與 Configuration
 handler = WebhookHandler(CHANNEL_SECRET)
@@ -32,12 +38,13 @@ def handle_text(event):
     user_input = event.message.text.strip()  # 使用者輸入文字
     user_id = event.source.user_id           # 使用者的 LINE ID
 
+    # 使用 ApiClient 進行 API 呼叫，確保自動開關連線
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
         line_bot_api.show_loading_animation(  #延遲動畫
             ShowLoadingAnimationRequest(
                 chatId = user_id,
-                loadingSeconds=5
+                loadingSeconds=5     # 動畫持續秒數
             )
         )
 
@@ -109,36 +116,27 @@ def handle_text(event):
                 )
             return
 
+        is_similar, content, score = query_vectorstore(user_input)
 
-        # === 查詢資源地點（比對關鍵字）===
-        found_location = None
-        for category, items in cycu_resources.get("中原大學資源", {}).items():
-            for name, info in items.items():
-                if name in user_input and "地點" in info:
-                    found_location = f"{name}的地點是：{info['地點']}" if info["地點"] else f"{name}沒有地點資料喔！"
-                    break
-
-
-        # 回覆地點查詢
-        if found_location:
-            line_bot_api.reply_message(
-                ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=found_location)])
-            )
-            return
+        if is_similar:
+            content = base_prompt + f"以下是與您問題最相關的資訊，供您參考：\n{content}"
+        else:
+            content = base_prompt + f"可參考用途索引：{content}"
 
         # === 查詢歷史對話，建立上下文 ===
-        history = list(history_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(10))
+        history = list(history_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(5))
         history.reverse()  # 由舊至新
+        messages = []
 
-        # 建立對話上下文（system + 歷史）
-        messages = [
-            {"role": "system", "content": base_prompt + f"可參考用途索引：{json.dumps(cycu_resources.get('用途索引', {}), ensure_ascii=False)}"}
-        ]
+   
+        # 將歷史對話依序加入 messages，供 LLM 建立上下文
         for h in history:
             if "user_input" in h:
                 messages.append({"role": "user", "content": h["user_input"]})
             if "reply" in h:
                 messages.append({"role": "assistant", "content": h["reply"]})
+
+        # 最新使用者輸入也加入上下文末端
         messages.append({"role": "user", "content": user_input})
 
         # === 呼叫 LLM 產生回覆 ===

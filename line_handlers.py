@@ -25,8 +25,7 @@ from datetime import datetime
 import json
 import time
 
-# 初始化向量庫（啟動時載入一次）
-vectorstore = load_vectorstore()
+
 
 # 設定 LINE Handler 與 Configuration
 handler = WebhookHandler(CHANNEL_SECRET)

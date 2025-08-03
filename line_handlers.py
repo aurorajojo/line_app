@@ -149,6 +149,7 @@ def handle_text(event):
 
         history_collection.insert_one({
             "user_id": user_id,           # 使用者id
+            "prompt": content,
             "user_input": user_input,     # 使用者輸入
             "reply": reply,               # llm回覆
             "emotion_tag": emotion_tag,   # 情緒

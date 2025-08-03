@@ -11,3 +11,4 @@ torch
 transformers
 faiss-cpu
 sentence-transformers
+gradio_client

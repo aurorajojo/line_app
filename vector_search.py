@@ -23,7 +23,7 @@ vectorstore = FAISS.load_local(
     allow_dangerous_deserialization=True
 )
 
-def query_vectorstore(text, top_k=1, threshold=0.75):
+def query_vectorstore(text, top_k=1, threshold=0.35):
     """
     傳入查詢字串 text，回傳：
     - 是否有超過 threshold 的相似度
@@ -33,7 +33,7 @@ def query_vectorstore(text, top_k=1, threshold=0.75):
     results = vectorstore.similarity_search_with_score(text, k=top_k)
     if results:
         top_doc, top_score = results[0]
-        if top_score >= threshold:
+        if top_score <= threshold:
             return True, top_doc.page_content, top_score                    #回傳最相似的文件內容與相似度
     usage_index = f"可參考用途索引：{json.dumps(cycu_resources.get('用途索引', {}), ensure_ascii=False)}"
     return False, usage_index, None     #回傳用途索引

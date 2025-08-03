@@ -1,6 +1,7 @@
 from gradio_client import Client
 from langchain_community.vectorstores import FAISS
 from langchain_core.embeddings import Embeddings
+from resources import  cycu_resources  # 從 resources.py 匯入
 import json
 
 HF_SPACE_ID = "aurorajojo/e5-large-embedding-api"
@@ -22,10 +23,6 @@ vectorstore = FAISS.load_local(
     allow_dangerous_deserialization=True
 )
 
-# 你自己的用途索引
-with open("cycu_resources.json", "r", encoding="utf-8") as f:
-    cycu_resources = json.load(f)
-
 def query_vectorstore(text, top_k=1, threshold=0.75):
     """
     傳入查詢字串 text，回傳：
@@ -38,5 +35,5 @@ def query_vectorstore(text, top_k=1, threshold=0.75):
         top_doc, top_score = results[0]
         if top_score >= threshold:
             return True, top_doc.page_content, top_score                    #回傳最相似的文件內容與相似度
-    usage_index = json.dumps(cycu_resources.get("用途索引", {}), ensure_ascii=False)
-    return False, usage_index, None     #回傳用途索引（字串）
+    usage_index = f"可參考用途索引：{json.dumps(cycu_resources.get('用途索引', {}), ensure_ascii=False)}"
+    return False, usage_index, None     #回傳用途索引

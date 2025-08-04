@@ -26,10 +26,14 @@ flowchart TD
 
     subgraph 向量檢索系統
         I --> V1[FAISS 向量資料庫]
-        V1 --> J[整合檢索結果與系統提示詞（Base Prompt）形成完整查詢內容]
+        V1 --> Q{相似度距離 < 0.35?}
+        Q -->|是| J[整合 Base Prompt 與相似內容]
+        Q -->|否| R[整合 Base Prompt 與中原資源索引內容]
     end
 
     subgraph 對話管理
+        J --> L[呼叫 Groq LLM API]
+        R --> L
         MDB_Read[(MongoDB 讀取)]
         MDB_Write[(MongoDB 寫入)]
 

@@ -6,23 +6,23 @@ flowchart TD
         A[使用者透過 LINE 傳送文字訊息] --> B[WebhookHandler 接收並處理事件]
     end
 
-    B --> C[觸發顯示 Loading 動畫，提升用戶體驗]
+    B --> C[顯示 Loading 動畫，提升用戶體驗]
 
-    C --> D{判斷使用者輸入類型}
+    C --> D{依序判斷使用者輸入類型}
 
-    D -->|情緒分析請求| E[生成情緒儀表板報告並回傳]
-    E --> O1[透過 Messaging API 回覆使用者]
+    D -->|1. 情緒分析請求| E[生成情緒儀表板報告並回傳]
+    E --> O1[透過 Messaging API 回覆使用者訊息]
 
-    D -->|開始憂鬱症量表測驗| F[回傳憂鬱症量表 FlexMessage 介面]
+    D -->|2. 開始憂鬱症量表測驗| F[回傳憂鬱症量表 FlexMessage 介面]
     F --> O1
 
-    D -->|開始遊戲成癮量表測驗| G[回傳遊戲成癮量表 FlexMessage 介面]
+    D -->|3. 開始遊戲成癮量表測驗| G[回傳遊戲成癮量表 FlexMessage 介面]
     G --> O1
 
-    D -->|量表回答階段| H[驗證回應並回傳下一題或測驗結果]
+    D -->|4. 量表回答階段| H[驗證回應並回傳下一題或測驗結果]
     H --> O1
 
-    D -->|一般文字查詢| I[呼叫向量檢索系統進行相似度查詢]
+    D -->|5. 一般文字查詢| I[呼叫向量檢索系統進行相似度查詢]
 
     subgraph 向量檢索系統
         I --> V1[FAISS 向量資料庫]
@@ -30,16 +30,13 @@ flowchart TD
     end
 
     subgraph 對話管理
-        J --> K[從 MongoDB 擷取用戶近期對話紀錄，組成上下文訊息列表]
-        K --> MDB[(MongoDB)]
-        MDB -.-> K
-        K --> L[呼叫 Groq LLM API，送出完整上下文與提示詞進行生成]
-        L --> API1[(Groq API)]
-        L --> M[從生成結果萃取情緒、策略與主題標籤]
-        M --> MDB
+        J --> L[呼叫 Groq LLM API]
+        MDB[(MongoDB)] --> L
+        L --> MDB
+        MDB --> Z[流程完成]
     end
 
-    O1[透過 Messaging API 回覆使用者訊息] --> A
+    O1 --> Z
 
 ```
 

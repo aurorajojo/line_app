@@ -1,5 +1,6 @@
 ## 系統流程圖
 
+```mermaid
 flowchart TD
     subgraph LINE平台
         A[使用者在 LINE 輸入訊息] --> B[WebhookHandler 收到事件]

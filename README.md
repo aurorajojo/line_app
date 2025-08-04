@@ -3,43 +3,43 @@
 ```mermaid
 flowchart TD
     subgraph LINE平台
-        A[使用者在 LINE 輸入訊息] --> B[WebhookHandler 收到事件]
+        A[使用者透過 LINE 傳送文字訊息] --> B[WebhookHandler 接收並處理事件]
     end
 
-    B --> C[顯示 Loading 動畫]
+    B --> C[觸發顯示 Loading 動畫，提升用戶體驗]
 
-    C --> D{訊息類型判斷}
+    C --> D{判斷使用者輸入類型}
 
-    D -->|情緒分析請求| E[生成情緒儀表板]
-    E --> O1[回覆使用者]
+    D -->|情緒分析請求| E[生成情緒儀表板報告並回傳]
+    E --> O1[透過 Messaging API 回覆使用者]
 
-    D -->|憂鬱量表開始| F[送出憂鬱症量表 FlexMessage]
+    D -->|開始憂鬱症量表測驗| F[回傳憂鬱症量表 FlexMessage 介面]
     F --> O1
 
-    D -->|遊戲成癮量表開始| G[送出遊戲成癮量表 FlexMessage]
+    D -->|開始遊戲成癮量表測驗| G[回傳遊戲成癮量表 FlexMessage 介面]
     G --> O1
 
-    D -->|量表作答中| H[處理作答並回覆下一題或結果]
+    D -->|量表回答階段| H[驗證回應並回傳下一題或測驗結果]
     H --> O1
 
-    D -->|一般文字訊息| I[向量檢索系統查詢]
+    D -->|一般文字查詢| I[呼叫向量檢索系統進行相似度查詢]
 
     subgraph 向量檢索系統
-        I --> V1[FAISS 向量資料庫]
-        V1 --> J[組合檢索結果與 Base Prompt]
+        I --> V1[FAISS 向量資料庫進行向量相似度檢索]
+        V1 --> J[整合檢索結果與系統預設提示詞]
     end
 
-    subgraph 對話處理
-        J --> K[讀取歷史對話]
+    subgraph 對話管理
+        J --> K[從 MongoDB 擷取用戶近期對話紀錄，建立上下文]
         K --> MDB[(MongoDB)]
         MDB --> K
-        K --> L[呼叫 Groq LLM]
+        K --> L[呼叫 Groq LLM API 生成回覆文本]
         L --> API1[(Groq API)]
-        L --> M[萃取情緒/策略/主題標籤]
+        L --> M[從回覆中萃取情緒標籤、策略標籤與主題標籤]
         M --> MDB
     end
 
-    O1[回覆使用者] -->|透過 Messaging API| LINE平台
+    O1[透過 Messaging API 回覆使用者訊息] --> A
 ```
 
 ## 各檔案說明

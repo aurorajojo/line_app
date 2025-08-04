@@ -1,3 +1,45 @@
+## 系統流程圖
+
+flowchart TD
+    subgraph LINE平台
+        A[使用者在 LINE 輸入訊息] --> B[WebhookHandler 收到事件]
+    end
+
+    B --> C[顯示 Loading 動畫]
+
+    C --> D{訊息類型判斷}
+
+    D -->|情緒分析請求| E[生成情緒儀表板]
+    E --> O1[回覆使用者]
+
+    D -->|憂鬱量表開始| F[送出憂鬱症量表 FlexMessage]
+    F --> O1
+
+    D -->|遊戲成癮量表開始| G[送出遊戲成癮量表 FlexMessage]
+    G --> O1
+
+    D -->|量表作答中| H[處理作答並回覆下一題或結果]
+    H --> O1
+
+    D -->|一般文字訊息| I[向量檢索系統查詢]
+
+    subgraph 向量檢索系統
+        I --> V1[FAISS 向量資料庫]
+        V1 --> J[組合檢索結果與 Base Prompt]
+    end
+
+    subgraph 對話處理
+        J --> K[讀取歷史對話]
+        K --> MDB[(MongoDB)]
+        MDB --> K
+        K --> L[呼叫 Groq LLM]
+        L --> API1[(Groq API)]
+        L --> M[萃取情緒/策略/主題標籤]
+        M --> MDB
+    end
+
+    O1[回覆使用者] -->|透過 Messaging API| LINE平台
+
 ## 各檔案說明
 
 ### `app.py`

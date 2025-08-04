@@ -80,7 +80,7 @@ flowchart TD
    - **不符合** → 回傳 `cycu_resources.json` 中的用途索引。
 <br>
 
-以便後續加入prompt回傳給大型語言模型
+    以便後續加入prompt回傳給大型語言模型
      
 ### `llm.py`
 - 封裝與語言模型（Groq / LLaMA）溝通的邏輯。

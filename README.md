@@ -66,6 +66,21 @@ flowchart TD
 - 匯入 `mongo` 模組連接MongoDB 資料庫。
 - 定義收到文字訊息後的應對流程。
 
+### `vector_search.py`
+
+負責向量檢索與相似度判斷的模組，流程如下：
+
+1. **向量化**  
+   使用自訂 `APIEmbeddings`，呼叫 Hugging Face Space（`e5-large-embedding-api`）將查詢與文件轉換為向量。
+
+2. **載入向量庫**  
+   透過 `FAISS.load_local()` 載入本地向量索引 `cycu_faiss_index`。
+
+3. **相似度比對**  
+   `query_vectorstore()` 執行檢索並判斷距離閾值（預設 0.35）：  
+   - **符合閾值** → 回傳最相關文件與分數。  
+   - **不符合** → 回傳 `cycu_resources` 中的用途索引。
+     
 ### `llm.py`
 - 封裝與語言模型（Groq / LLaMA）溝通的邏輯。
 - 定義如何將使用者訊息送出並取得回應。

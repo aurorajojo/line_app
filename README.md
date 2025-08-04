@@ -48,7 +48,7 @@ flowchart TD
     O1[透過 Messaging API 回覆使用者訊息] --> Z[流程完成]
 
 ```
-
+<br>
 ## 各檔案說明
 
 ### `app.py`
@@ -68,36 +68,33 @@ flowchart TD
 
 ### `vector_search.py`
 
-負責向量檢索與相似度判斷的模組，流程如下：
+負責向量檢索與相似度判斷，流程如下：
 
 1. **向量化**  
-   使用自訂 `APIEmbeddings`，呼叫 Hugging Face Space（[aurorajojo/e5-large-embedding-api](https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api)）將使用者 input 轉換為向量。
+   呼叫 Hugging Face Space（[aurorajojo/e5-large-embedding-api](https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api)）將使用者 input 轉換為向量。
 
 2. **載入向量庫**  
-   透過 `FAISS.load_local()` 載入本地向量索引 `cycu_faiss_index`。
+   透過 `FAISS.load_local()` 載入本地向量庫 `cycu_faiss_index`。
 
-3. **相似度比對**  
+3. **向量距離比對**  
    `query_vectorstore()` 執行檢索並判斷距離閾值（預設 0.35）：  
-   - **符合閾值** → 回傳最相關文件與分數。  
-   - **不符合** → 回傳 `cycu_resources` 中的用途索引。
+   - **符合閾值** → 回傳最相關句子與向量距離分數。  
+   - **不符合** → 回傳 `cycu_resources.json` 中的用途索引。
      
 ### `llm.py`
 - 封裝與語言模型（Groq / LLaMA）溝通的邏輯。
 - 定義如何將使用者訊息送出並取得回應。
 
 ### `extract_topic.py`
-- 使用者聊天前會在圖文選單選擇聊天主題(有7種)
-- 所以後面所有的對話都會記錄為該主題並且 `儲存至資料庫 `
-- 故這個檔案會在每次使用者輸入文字後，判斷一次他是否更換主題
+- 使用者聊天前會在圖文選單選擇聊天主題(有7種)，後面所有的對話都會記錄為該主題並且 `儲存至資料庫 `
+- 在每次使用者輸入文字後，判斷一次他是否更換主題
 - 若沒有更換，則沿用上一句話的主題
 - 如果資料庫為空，沒有歷史對話，就將主題先記錄為"其他"
 
 ### `emotion_strategy_utils.py`
--  為了避免讓使用者察覺我們正在進行 `情緒分析` 與 `心理策略紀錄` 
--  我們設計了隱藏式的標記機制
--  當 LLM 回傳分析結果時，不會直接以文字顯示情緒名稱或策略內容
--  而是透過編碼形式（如 [1]～[8] 表示情緒、(1)～(8) 表示策略）進行標註
--  這個檔案就是在進行上述的標記轉換處理
+-  為了避免讓使用者察覺我們正在進行 `情緒分析` 與 `心理策略紀錄` ，設計了隱藏式的標記機制，這個檔案就是在進行上述的標記轉換處理
+-  當 LLM 回傳分析結果時，不會直接以文字顯示情緒名稱或策略內容，是透過編碼形式（如 [1]～[8] 表示情緒、(1)～(8) 表示策略）進行標註
+
 
 ### `emotion_dashboard.py`
 - 根據使用者歷史對話紀錄，統計每種情緒出現的頻率，並產生 `文字情緒儀表板` 。

@@ -71,7 +71,7 @@ flowchart TD
 負責向量檢索與相似度判斷的模組，流程如下：
 
 1. **向量化**  
-   使用自訂 `APIEmbeddings`，呼叫 Hugging Face Space（`e5-large-embedding-api`）將查詢與文件轉換為向量。
+   使用自訂 `APIEmbeddings`，呼叫 Hugging Face Space（[aurorajojo/e5-large-embedding-api](https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api)）將使用者 input 轉換為向量。
 
 2. **載入向量庫**  
    透過 `FAISS.load_local()` 載入本地向量索引 `cycu_faiss_index`。

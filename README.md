@@ -32,13 +32,15 @@ flowchart TD
     end
 
     subgraph 對話管理
-        J --> L[呼叫 Groq LLM API]
-        R --> L
+        J --> X[整合為最終Prompt]
+        R --> X
+        MDB_Read --> X
+
+        X --> L[呼叫 Groq LLM API]
         MDB_Read[(MongoDB 讀取歷史對話)]
         MDB_Write[(MongoDB 寫入)]
 
 
-        MDB_Read -->|一起送入| L
         L --> MDB_Write
         
     end

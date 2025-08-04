@@ -31,19 +31,19 @@ flowchart TD
         Q -->|否| R[整合 Base Prompt 與中原資源索引內容]
     end
 
-    subgraph 對話管理
-        J --> X[整合為最終Prompt]
-        R --> X
-        MDB_Read --> X
+    
+    J --> X[整合為最終Prompt]
+    R --> X
+    MDB_Read --> X
 
-        X --> L[呼叫 Groq LLM API]
-        MDB_Read[(MongoDB 讀取歷史對話)]
-        MDB_Write[(MongoDB 寫入)]
+    X --> L[呼叫 Groq LLM API]
+    MDB_Read[(MongoDB 讀取歷史對話)]
+    MDB_Write[(MongoDB 寫入)]
 
 
-        L --> MDB_Write
+    L --> MDB_Write
         
-    end
+    
     MDB_Write --> O1
     O1[透過 Messaging API 回覆使用者訊息] --> Z[流程完成]
 

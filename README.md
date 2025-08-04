@@ -25,21 +25,22 @@ flowchart TD
     D -->|一般文字查詢| I[呼叫向量檢索系統進行相似度查詢]
 
     subgraph 向量檢索系統
-        I --> V1[FAISS 向量資料庫進行向量相似度檢索]
-        V1 --> J[整合檢索結果與系統預設提示詞]
+        I --> V1[FAISS 向量資料庫]
+        V1 --> J[整合檢索結果與系統提示詞（Base Prompt）形成完整查詢內容]
     end
 
     subgraph 對話管理
-        J --> K[從 MongoDB 擷取用戶近期對話紀錄，建立上下文]
+        J --> K[從 MongoDB 擷取用戶近期對話紀錄，組成上下文訊息列表]
         K --> MDB[(MongoDB)]
-        MDB --> K
-        K --> L[呼叫 Groq LLM API 生成回覆文本]
+        MDB -.-> K
+        K --> L[呼叫 Groq LLM API，送出完整上下文與提示詞進行生成]
         L --> API1[(Groq API)]
-        L --> M[從回覆中萃取情緒標籤、策略標籤與主題標籤]
+        L --> M[從生成結果萃取情緒、策略與主題標籤]
         M --> MDB
     end
 
     O1[透過 Messaging API 回覆使用者訊息] --> A
+
 ```
 
 ## 各檔案說明

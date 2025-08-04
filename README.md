@@ -69,7 +69,7 @@ flowchart TD
 
 ### `vector_search.py`
 
-負責向量檢索與相似度判斷，流程如下：
+負責向量檢索與向量距離判斷，流程如下：
 
 1. **向量化**  
    呼叫 Hugging Face Space（[aurorajojo/e5-large-embedding-api](https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api)）將使用者 input 轉換為向量。

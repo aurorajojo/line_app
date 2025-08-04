@@ -30,13 +30,18 @@ flowchart TD
     end
 
     subgraph 對話管理
-        J --> L[呼叫 Groq LLM API]
-        MDB[(MongoDB)] --> L
+        style MDB fill:#f9f,stroke:#333,stroke-width:1px
+        style J fill:#9ff,stroke:#333,stroke-width:1px
+        MDB[(MongoDB)] --- J
+
+        MDB --> L[呼叫 Groq LLM API]
+        J --> L
         L --> MDB
         MDB --> Z[流程完成]
     end
 
     O1 --> Z
+
 
 ```
 

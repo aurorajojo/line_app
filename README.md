@@ -40,6 +40,7 @@ flowchart TD
     end
 
     O1[回覆使用者] -->|透過 Messaging API| LINE平台
+```
 
 ## 各檔案說明
 

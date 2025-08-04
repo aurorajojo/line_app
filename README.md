@@ -6,7 +6,7 @@ flowchart TD
         A[使用者透過 LINE 傳送文字訊息] --> B[WebhookHandler 接收並處理事件]
     end
 
-    B --> C[顯示 Loading 動畫，提升用戶體驗]
+    B --> C[顯示 Loading 動畫]
 
     C --> D{依序判斷使用者輸入類型}
 
@@ -22,12 +22,12 @@ flowchart TD
     D -->|4 量表回答階段| H[驗證回應並回傳下一題或測驗結果]
     H --> O1
 
-    D -->|5 一般文字查詢| I[呼叫向量檢索系統進行相似度查詢]
+    D -->|5 諮商輔導| I[呼叫api將文字轉成向量]
 
-    subgraph 向量檢索系統
-        I --> V1[FAISS 向量資料庫]
-        V1 --> Q{向量距離 < 0.35?}
-        Q -->|是| J[整合 Base Prompt 與相似內容]
+    subgraph RAG
+        I --> V1[和FAISS 向量資料庫比對]
+        V1 --> Q{向量距離 <= 0.35?}
+        Q -->|是| J[整合 Base Prompt 與向量資料庫相似內容]
         Q -->|否| R[整合 Base Prompt 與中原資源索引內容]
     end
 
@@ -37,8 +37,8 @@ flowchart TD
     MDB_Read --> X
 
     X --> L[呼叫 Groq LLM API]
-    MDB_Read[(MongoDB 讀取歷史對話)]
-    MDB_Write[(MongoDB 寫入)]
+    MDB_Read[( 讀取 MongoDB 歷史對話)]
+    MDB_Write[( 寫入 MongoDB 此次對答、使用心理策略、使用者情緒、聊天主題、時間)]
 
 
     L --> MDB_Write

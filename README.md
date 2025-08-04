@@ -78,6 +78,8 @@ flowchart TD
    `query_vectorstore()` 執行檢索並判斷距離閾值（預設 0.35）：  
    - **符合閾值** → 回傳最相關資訊句子與向量距離分數。  
    - **不符合** → 回傳 `cycu_resources.json` 中的用途索引。
+<br>
+
 以便後續加入prompt回傳給大型語言模型
      
 ### `llm.py`

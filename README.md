@@ -62,10 +62,7 @@ flowchart TD
 - 與 `.env` 檔案結合，集中管理設定值。
 
 ### `line_handlers.py`
-- 處理來自 LINE 的訊息事件。
-- 匯入 `llm` 模組定義模型處理邏輯。
-- 匯入 `mongo` 模組連接MongoDB 資料庫。
-- 定義收到文字訊息後的應對流程。
+- 處理來自 LINE 的訊息事件。包括情緒儀表板、做量表、心理諮商。
 
 ### `vector_search.py`
 
@@ -75,12 +72,13 @@ flowchart TD
    呼叫 Hugging Face Space（[aurorajojo/e5-large-embedding-api](https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api)）將使用者 input 轉換為向量。
 
 2. **載入向量庫**  
-   透過 `FAISS.load_local()` 載入本地向量庫 `cycu_faiss_index`。
+   透過 `FAISS.load_local()` 載入本地向量庫 `cycu_faiss_index`。內容為中原大學各項資源的文字描述，包含藝文資源、學習資源、心理輔導、體育場館、餐飲、教官室等資訊。
 
 3. **向量距離比對**  
    `query_vectorstore()` 執行檢索並判斷距離閾值（預設 0.35）：  
-   - **符合閾值** → 回傳最相關句子與向量距離分數。  
+   - **符合閾值** → 回傳最相關資訊句子與向量距離分數。  
    - **不符合** → 回傳 `cycu_resources.json` 中的用途索引。
+   以便後續加入prompt回傳給大型語言模型
      
 ### `llm.py`
 - 封裝與語言模型（Groq / LLaMA）溝通的邏輯。
@@ -93,9 +91,8 @@ flowchart TD
 - 如果資料庫為空，沒有歷史對話，就將主題先記錄為"其他"
 
 ### `emotion_strategy_utils.py`
--  為了避免讓使用者察覺我們正在進行 `情緒分析` 與 `心理策略紀錄` ，設計了隱藏式的標記機制，這個檔案就是在進行上述的標記轉換處理
--  當 LLM 回傳分析結果時，不會直接以文字顯示情緒名稱或策略內容，是透過編碼形式（如 [1]～[8] 表示情緒、(1)～(8) 表示策略）進行標註
-
+-  為了避免讓使用者察覺我們正在進行 `情緒分析` 與 `心理策略紀錄` ，設計了隱藏式的標記機制(當 LLM 回傳分析結果時，不會直接以文字顯示情緒名稱或策略內容，是透過編碼形式（如 [1]～[8] 表示情緒、(1)～(8) 表示策略）進行標註)，這個檔案就是在進行上述的標記轉換處理
+  
 
 ### `emotion_dashboard.py`
 - 根據使用者歷史對話紀錄，統計每種情緒出現的頻率，並產生 `文字情緒儀表板` 。

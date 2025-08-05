@@ -126,7 +126,7 @@ def handle_text(event):
         # === 查詢歷史對話，建立上下文 ===
         history = list(history_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(5))
         history.reverse()  # 由舊至新
-        messages = [{"role": "system", "content": system_prompt}]
+        messages = [{"role": "system", "content": content}]
 
    
         # 將歷史對話依序加入 messages，供 LLM 建立上下文

@@ -72,7 +72,7 @@ flowchart TD
    呼叫 Hugging Face Space（[aurorajojo/e5-large-embedding-api](https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api)）將使用者 input 轉換為向量。
 
 2. **載入向量庫**  
-   透過 `FAISS.load_local()` 載入本地向量庫 `cycu_faiss_index`。內容為中原大學各項資源的文字描述，包含藝文資源、學習資源、心理輔導、體育場館、餐飲、教官室等資訊。
+   透過 `FAISS.load_local()` 載入本地向量庫 ([cycu_faiss_index] (https://github.com/aurorajojo/line_app/blob/main/cycu_faiss_index/README.md))。內容為中原大學各項資源的文字描述，包含藝文資源、學習資源、心理輔導、體育場館、餐飲、教官室等資訊。
 
 3. **向量距離比對**  
    `query_vectorstore()` 執行檢索並判斷距離閾值（預設 0.35）：  

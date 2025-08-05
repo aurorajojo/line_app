@@ -14,13 +14,19 @@
 3. 使用 FAISS 建立索引，並儲存為 `cycu_faiss_index` 資料夾
 
 ## 查詢方式
-將透過本人架設的 Hugging Face Space：
-[https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api](https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api) 
 
 vector_search.py 使用流程：
-1. 使用 Hugging Face `gradio_client` 呼叫 API， API 回傳透過 intfloat/multilingual-e5-large 模型產生的向量
-2. 與 `cycu_faiss_index` 中的向量比對
-3. 找出最相似的文件內容，將其向量距離再和閥值比大小，決定是否加入 prompt 。
+1. **向量化**  
+   呼叫 本人架設的Hugging Face Space（[aurorajojo/e5-large-embedding-api](https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api)）將使用者 input 轉換為向量。
+
+2. **載入向量庫**  
+   透過 `FAISS.load_local()` 載入本地向量庫 （[cycu_faiss_index](https://github.com/aurorajojo/line_app/blob/main/cycu_faiss_index))。內容為中原大學各項資源的文字描述，包含藝文資源、學習資源、心理輔導、體育場館、餐飲、教官室等資訊。
+
+4. **向量距離比對**  
+   `query_vectorstore()` 執行檢索並判斷距離閾值（預設 0.35）：  
+   - **符合閾值** → 回傳最相關資訊句子與向量距離分數，以便後續加入prompt回傳給大型語言模型。
+   - **不符合** → 回傳 `cycu_resources.json` 中的用途索引，以便後續加入prompt回傳給大型語言模型。
+     
 
 ## 📂 資料夾內容
 

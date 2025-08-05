@@ -4,14 +4,14 @@
 `cycu_faiss_index` 是一個使用 **[intfloat/multilingual-e5-large](https://huggingface.co/intfloat/multilingual-e5-large)** 模型產生的向量資料庫，內容為中原大學各項資源的文字描述，包含藝文資源、學習資源、心理輔導、體育場館、餐飲、教官室等資訊。
 
 本向量資料庫可用於語意檢索，讓使用者以自然語言查詢，例如：
-> 「游泳池幾點開？」  
-系統會回傳對應的資訊與向量距離。
+> 「諮商中心幾點開？」  
+系統會回傳對應的資訊與向量距離。再以向量距離判斷是否將對應資訊加入 prompt 。
 
 ## 資料庫建立過程
 
 1. 將 `cycu_resources.txt` 依空行分段切割成 chunk
 2. 使用 `intfloat/multilingual-e5-large` 對每個 chunk 產生向量
-3. 使用 [FAISS](https://github.com/facebookresearch/faiss) 建立索引，並儲存為 `cycu_faiss_index` 資料夾
+3. 使用 FAISS 建立索引，並儲存為 `cycu_faiss_index` 資料夾
 
 ## 查詢方式
 將透過本人架設的 Hugging Face Space：
@@ -21,7 +21,7 @@ vector_search.py 使用流程：
 1. 使用 Hugging Face `gradio_client` 呼叫 API
 2. API 回傳文字透過 intfloat/multilingual-e5-large 模型產生的向量
 3. 與 `cycu_faiss_index` 中的向量比對
-4. 回傳最相似的文件內容與向量距離
+4. 找出最相似的文件內容，將其向量距離再和閥值比大小，決定是否加入 prompt 。
 
 ## 📂 資料夾內容
 

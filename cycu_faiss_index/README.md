@@ -10,7 +10,7 @@
 ## 資料庫建立過程
 
 1. 將 `cycu_resources.txt` 依空行分段切割成 chunk
-2. 使用 `intfloat/multilingual-e5-large` 對每個 chunk 產生向量
+2. 使用 `intfloat/multilingual-e5-large` 模型對每個 chunk 產生向量
 3. 使用 FAISS 建立索引，並儲存為 `cycu_faiss_index` 資料夾
 
 ## 查詢方式

@@ -18,7 +18,7 @@
 [https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api](https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api) 
 
 vector_search.py 使用流程：
-1. 使用 Hugging Face `gradio_client` 呼叫 API， API 回傳文字透過 intfloat/multilingual-e5-large 模型產生的向量
+1. 使用 Hugging Face `gradio_client` 呼叫 API， API 回傳透過 intfloat/multilingual-e5-large 模型產生的向量
 2. 與 `cycu_faiss_index` 中的向量比對
 3. 找出最相似的文件內容，將其向量距離再和閥值比大小，決定是否加入 prompt 。
 

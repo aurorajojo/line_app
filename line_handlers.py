@@ -122,10 +122,11 @@ def handle_text(event):
         else:
             content = base_prompt + f"可參考用途索引：{content}"
 
+
         # === 查詢歷史對話，建立上下文 ===
         history = list(history_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(5))
         history.reverse()  # 由舊至新
-        messages = []
+        messages = [{"role": "system", "content": system_prompt}]
 
    
         # 將歷史對話依序加入 messages，供 LLM 建立上下文
@@ -149,7 +150,7 @@ def handle_text(event):
 
         history_collection.insert_one({
             "user_id": user_id,           # 使用者id
-            "prompt": content,
+            "prompt": messages,           # token
             "user_input": user_input,     # 使用者輸入
             "reply": reply,               # llm回覆
             "emotion_tag": emotion_tag,   # 情緒

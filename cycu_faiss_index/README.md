@@ -1,16 +1,16 @@
 # cycu_faiss_index
 
 ## 介紹
-`cycu_faiss_index` 是一個使用 **[e5-large-embedding](https://huggingface.co/intfloat/multilingual-e5-large)** 模型產生的向量資料庫，內容為中原大學各項資源的文字描述，包含藝文資源、學習資源、心理輔導、體育場館、餐飲、教官室等資訊。
+`cycu_faiss_index` 是一個使用 **[intfloat/multilingual-e5-large](https://huggingface.co/intfloat/multilingual-e5-large)** 模型產生的向量資料庫，內容為中原大學各項資源的文字描述，包含藝文資源、學習資源、心理輔導、體育場館、餐飲、教官室等資訊。
 
 本向量資料庫可用於語意檢索，讓使用者以自然語言查詢，例如：
 > 「游泳池幾點開？」  
 系統會回傳對應的資訊與向量距離。
 
 ## 向量生成
-本資料庫的向量是使用 **e5-large-embedding** 模型生成，建立過程：
+本資料庫的向量是使用 **intfloat/multilingual-e5-large** 模型生成，建立過程：
 1. 將 `cycu_resources.txt` 依空行分段切割成 chunk
-2. 使用 `e5-large-embedding` 對每個 chunk 產生向量
+2. 使用 `intfloat/multilingual-e5-large` 對每個 chunk 產生向量
 3. 使用 [FAISS](https://github.com/facebookresearch/faiss) 建立索引，並儲存為 `cycu_faiss_index` 資料夾
 
 ## 查詢方式

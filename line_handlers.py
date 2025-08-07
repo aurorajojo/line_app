@@ -67,6 +67,13 @@ def handle_text(event):
         
         # === 憂鬱量表 ===
         elif user_input == "我要做憂鬱症量表":
+            if user_id in user_state or user_id in user_state1:  # 防呆機制，避免一次施測多重量表
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token, messages=[TextMessage(text="請先完成當前量表才能開始施測其他量表喔！")]
+                    )
+                )
+                return
             bubble = start_depression_test(user_id)
             line_bot_api.reply_message(
                 ReplyMessageRequest(reply_token=event.reply_token, messages=[bubble])   # 顯示量表 FlexMessage 按鈕
@@ -75,6 +82,13 @@ def handle_text(event):
 
         # === 遊戲成癮量表 ===
         elif user_input == "我要做遊戲成癮量表":
+            if user_id in user_state or user_id in user_state1:  # 防呆機制，避免一次施測多重量表
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token, messages=[TextMessage(text="請先完成當前量表才能開始施測其他量表喔！")]
+                    )
+                )
+                return
             bubble = start_gaming_test(user_id)
             line_bot_api.reply_message(
                 ReplyMessageRequest(reply_token=event.reply_token, messages=[bubble])   # 顯示量表 FlexMessage 按鈕
@@ -150,7 +164,7 @@ def handle_text(event):
 
         history_collection.insert_one({
             "user_id": user_id,           # 使用者id
-            "prompt": messages,           # token
+            "prompt": messages,           # prompt
             "user_input": user_input,     # 使用者輸入
             "reply": reply,               # llm回覆
             "emotion_tag": emotion_tag,   # 情緒

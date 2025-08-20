@@ -9,6 +9,7 @@
 from datetime import datetime, timedelta
 from linebot.v3.messaging import FlexMessage, FlexContainer
 import threading
+import json
 
 # === 可選主題清單 ===
 VALID_TOPICS = [
@@ -129,5 +130,5 @@ def get_json(topic: str):
             ]
         }
     }
-    return FlexMessage(alt_text="主題已設定", contents=bubble_json)
+    return FlexMessage(alt_text="主題已設定", contents=FlexContainer.from_json(json.dumps(bubble_json)))
 

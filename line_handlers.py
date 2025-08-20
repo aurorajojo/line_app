@@ -17,14 +17,24 @@ from gaming_disorder_scale import start_gaming_test, handle_gaming_response
 from gaming_disorder_scale import user_state as user_state1
 from extract_topic import extract_topic
 from vector_search import query_vectorstore
+from topic_manager import (
+    init_topic_manager,
+    check_and_set_topic,
+    has_topic,
+    VALID_TOPICS
+)
+
 
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 import torch
 from datetime import datetime
+import re
 import json
 import time
 
+# 啟動午夜清空
+init_topic_manager()
 
 
 # 設定 LINE Handler 與 Configuration
@@ -43,7 +53,7 @@ def handle_text(event):
         line_bot_api.show_loading_animation(  #延遲動畫
             ShowLoadingAnimationRequest(
                 chatId = user_id,
-                loadingSeconds=5     # 動畫持續秒數
+                loadingSeconds=10     # 動畫持續秒數
             )
         )
 
@@ -128,13 +138,52 @@ def handle_text(event):
                     ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=response)])
                 )
             return
+        
+        # === 檢查是否已經有主題 ===
+        if not has_topic(user_id):
+            status, topic = check_and_set_topic(user_id, user_input)
 
+            if status == "success":
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text=f"已設定主題：{topic}，我們可以開始聊天囉！")]
+                    )
+                )
+                
+                history_collection.insert_one({
+                    "user_id": user_id,                                      # 使用者的 LINE ID
+                    "prompt": "",                                            # 這裡不需要 prompt，因為只是設定主題
+                    "user_input": user_input,                                # 使用者實際輸入的文字（例：我想聊聊情緒困擾）
+                    "reply": f"已設定主題：{topic}，我們可以開始聊天囉！",      # 系統回覆的訊息，確認主題已設定
+                    "emotion_tag": "",                                       # 尚未進行對話，因此沒有情緒標籤
+                    "strategy": "",                                          # 尚未使用策略，因此留空
+                    "topic": topic,                                          # 存入使用者選擇的主題（例：情緒困擾）
+                    "timestamp": datetime.now()                              # 記錄當下時間，方便之後查詢
+                })
+
+            elif status == "invalid_format":
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text="開始之前，請先選擇聊天主題。\n打開主選單點擊開始聊天可進入選擇聊天主題頁面")]
+                    )
+                )
+            elif status == "invalid_topic":
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text="這個主題不在選項內喔！可選主題：" + "、".join(VALID_TOPICS))]
+                    )
+                )
+            return
+        
         is_similar, content, score = query_vectorstore(user_input)
 
         if is_similar:
-            content = base_prompt + f"以下是與您問題最相關的資訊，供您參考：\n{content}"
+            content = base_prompt + f"以下是與您問題最相關的學校資源：\n{content}"
         else:
-            content = base_prompt + f"可參考用途索引：{content}"
+            content = base_prompt + f"以下是可參考的學校資源索引：{content}"
 
 
         # === 查詢歷史對話，建立上下文 ===
@@ -172,6 +221,9 @@ def handle_text(event):
             "topic": topic_tags,          # 主題
             "timestamp": datetime.now()   # 時間
         })
+
+        # 把(數字) [數字] {數字} ... 刪掉
+        reply = re.sub(r"[\(\[\{]\d+[\)\]\}]", "", reply).strip()
         
         # === 回覆使用者 ===
         line_bot_api.reply_message(

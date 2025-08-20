@@ -21,6 +21,7 @@ from topic_manager import (
     init_topic_manager,
     check_and_set_topic,
     has_topic,
+    get_json,
     VALID_TOPICS
 )
 
@@ -143,11 +144,9 @@ def handle_text(event):
         status, topic = check_and_set_topic(user_id, user_input)
 
         if status == "success":    # 要設定
+
             line_bot_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[TextMessage(text=f"已設定主題：{topic}，我們可以開始聊天囉！")]
-                )
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[get_json(topic)])
             )
             
             history_collection.insert_one({

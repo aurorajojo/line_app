@@ -7,6 +7,7 @@
 # ==================================================
 
 from datetime import datetime, timedelta
+from linebot.v3.messaging import FlexMessage, FlexContainer
 import threading
 
 # === 可選主題清單 ===
@@ -86,9 +87,47 @@ def has_topic(user_id):
     """
     return user_id in users_with_topic_today
 
-def get_topic(user_id):
-    """
-    取得使用者今天的主題
-    若沒有，回傳 None
-    """
-    return users_with_topic_today.get(user_id, None)
+def get_json(topic: str):
+    bubble_json = {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "💬 主題已設定！",
+                    "weight": "bold",
+                    "size": "xl",
+                    "color": "#424242"
+                },
+                {
+                    "type": "box",
+                    "layout": "baseline",
+                    "spacing": "sm",
+                    "margin": "md",
+                    "contents": [
+                        {
+                            "type": "icon",
+                            "url": "https://scdn.line-apps.com/n/channel_devcenter/img/fx/review_gold_star_28.png"
+                        },
+                        {
+                            "type": "text",
+                            "text": topic,
+                            "size": "lg",
+                            "color": "#616161"
+                        }
+                    ]
+                },
+                {
+                    "type": "text",
+                    "text": "我們可以開始聊天囉 ✨",
+                    "wrap": True,
+                    "margin": "md",
+                    "color": "#212121"
+                }
+            ]
+        }
+    }
+    return FlexMessage(alt_text="主題已設定", contents=bubble_json)
+

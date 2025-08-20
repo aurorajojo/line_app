@@ -3,24 +3,13 @@
 
 from datetime import datetime
 from collections import Counter
+from linebot.v3.messaging import FlexMessage, FlexContainer
+import json
 from mongo import history_collection
 
 """
 根據使用者的歷史對話紀錄，產生情緒儀表板，分析使用者的情緒組成
 為了讓情緒分析結果更有親和力，我們替每一種情緒設計了一個對應角色
-範例如下:
-
-🧠 情緒儀表板
-──────────
-📅 日期：2025-07-30
-🎯 主要情緒：悲傷（43%）→ 🐟 小魚淚淚
-📊 情緒血條：
-🐟 小魚淚淚  ■■■■□□□□□□ (43%)
-🐇 小兔子焦焦  ■□□□□□□□□□ (14%)
-🦊 小狐狸羞羞  ■□□□□□□□□□ (14%)
-🦔 小刺蝟皮皮  ■□□□□□□□□□ (14%)
-☁️ 神秘雲雲  ■□□□□□□□□□ (14%)
-
 """
 
 EMOTION_CHARACTERS = {
@@ -34,45 +23,93 @@ EMOTION_CHARACTERS = {
     "其他": "☁️ 神秘雲雲"
 }
 
+# 不同情緒對應顏色（背景 / 長條）
+EMOTION_COLORS = {
+    "焦慮": ("#27ACB2", "#0D8186"),
+    "悲傷": ("#FF6B6E", "#DE5658"),
+    "憤怒": ("#F5A623", "#D97B00"),
+    "恐懼": ("#A17DF5", "#7D51E4"),
+    "厭惡": ("#9FD8E3", "#0D8186"),
+    "羞愧": ("#FAD2A7", "#DE5658"),
+    "其他": ("#B0BEC5", "#455A64"),
+}
+
 def generate_text_dashboard(user_id):
-    # 從 MongoDB 撈該使用者的紀錄
     user_data = list(history_collection.find({"user_id": user_id}))
+    if not user_data:
+        return FlexMessage(alt_text="情緒儀表板", contents=FlexContainer.from_json(json.dumps({
+            "type": "bubble",
+            "body": {"type": "box", "layout": "vertical", "contents":[
+                {"type": "text", "text": "查無對話紀錄，無法產生儀表板。", "wrap": True}
+            ]}
+        })))
 
-    if not user_data:   # 沒對話
-        return f"查無對話紀錄，無法產生儀表板。"
-
+    # 統計情緒
     emotion_counter = Counter()
     for doc in user_data:
-        emo = doc.get("emotion_tag", "").strip()   # 統計情緒
+        emo = doc.get("emotion_tag", "").strip()
         if emo and emo != "無法判斷":
             emotion_counter[emo] += 1
 
-    if not emotion_counter:  # 情緒都是無法判斷，不生成情緒儀表板
-        return "沒有明確的情緒標記，無法產生儀表板。"
+    if not emotion_counter:
+        return FlexMessage(alt_text="情緒儀表板", contents=FlexContainer.from_json(json.dumps({
+            "type": "bubble",
+            "body": {"type": "box", "layout": "vertical", "contents":[
+                {"type": "text", "text": "沒有明確的情緒標記，無法產生儀表板。", "wrap": True}
+            ]}
+        })))
 
-    sorted_emotions = emotion_counter.most_common()       # 找最常出現的情緒
-    total = sum(emotion_counter.values())                 # 計算對話次數
-    main_emotion, main_count = sorted_emotions[0]          # 紀錄最常出現的情緒
-    character = EMOTION_CHARACTERS.get(main_emotion, "❓") # 最常出現的情緒對應的角色
-    percent = round(main_count / total * 100)               # 計算最常出現情緒的占比
+    sorted_emotions = emotion_counter.most_common(3)  # 只取前三大情緒
+    total = sum(emotion_counter.values())
 
-    # 取最新一筆資料的日期
-    latest = sorted(user_data, key=lambda d: d.get("timestamp", datetime.min))[-1]
-    latest_date = latest["timestamp"].strftime("%Y-%m-%d") if "timestamp" in latest else "未知"
-
-    lines = [
-        "🧠 情緒儀表板",
-        "─" * 10,                                                 # 分隔線
-        f"📅 日期：{latest_date}",                                # 最新一筆資料的日期
-        f"🎯 主要情緒：{main_emotion}（{percent}%）→ {character}", # 最常出現的情緒與其占比(以數字顯示)
-        "📊 情緒血條："                                            # 顯示各個曾經出現的情緒其占比(以血條顯示)
-    ]
+    bubbles = []
     for emo, count in sorted_emotions:
-        p = round(count / total * 100)
-        lines.append(f"{EMOTION_CHARACTERS.get(emo, '?')}\t {bar(p)} ({p}%)")
+        percent = round(count / total * 100)
+        character = EMOTION_CHARACTERS.get(emo, "❓")
+        bg_color, bar_color = EMOTION_COLORS.get(emo, ("#27ACB2", "#0D8186"))
 
-    return "\n".join(lines)
+        bubble = {
+            "type": "bubble",
+            "size": "nano",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {"type": "text", "text": character, "color": "#ffffff", "align": "start", "size": "md"},
+                    {"type": "text", "text": f"{percent}%", "color": "#ffffff", "align": "start", "size": "xs", "margin": "lg"},
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [{"type": "filler"}],
+                                "width": f"{percent}%",
+                                "backgroundColor": bar_color,
+                                "height": "6px"
+                            }
+                        ],
+                        "backgroundColor": "#FFFFFF4D",
+                        "height": "6px",
+                        "margin": "sm"
+                    }
+                ],
+                "backgroundColor": bg_color,
+                "paddingAll": "12px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {"type": "text", "text": emo, "color": "#8C8C8C", "size": "sm", "wrap": True}
+                ],
+                "spacing": "md",
+                "paddingAll": "12px"
+            },
+            "styles": {"footer": {"separator": False}}
+        }
+        bubbles.append(bubble)
 
-def bar(percent):     # 情緒血條
-    length = int(percent / 10)
-    return "■" * length + "□" * (10 - length)
+    flex_json = {"type": "carousel", "contents": bubbles}
+    return FlexMessage(alt_text="情緒儀表板", contents=FlexContainer.from_json(json.dumps(flex_json)))

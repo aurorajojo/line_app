@@ -139,37 +139,41 @@ def handle_text(event):
                 )
             return
         
+        # 檢查是否要設定主題
+        status, topic = check_and_set_topic(user_id, user_input)
+
+        if status == "success":    # 要設定
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=f"已設定主題：{topic}，我們可以開始聊天囉！")]
+                )
+            )
+            
+            history_collection.insert_one({
+                "user_id": user_id,                                      # 使用者的 LINE ID
+                "prompt": "",                                            # 這裡不需要 prompt，因為只是設定主題
+                "user_input": user_input,                                # 使用者實際輸入的文字（例：我想聊聊情緒困擾）
+                "reply": f"已設定主題：{topic}，我們可以開始聊天囉！",      # 系統回覆的訊息，確認主題已設定
+                "emotion_tag": "",                                       # 尚未進行對話，因此沒有情緒標籤
+                "strategy": "",                                          # 尚未使用策略，因此留空
+                "topic": topic,                                          # 存入使用者選擇的主題（例：情緒困擾）
+                "timestamp": datetime.now()                              # 記錄當下時間，方便之後查詢
+            })
+
+            return 
+
         # === 檢查是否已經有主題 ===
         if not has_topic(user_id):
-            status, topic = check_and_set_topic(user_id, user_input)
 
-            if status == "success":
-                line_bot_api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=event.reply_token,
-                        messages=[TextMessage(text=f"已設定主題：{topic}，我們可以開始聊天囉！")]
-                    )
-                )
-                
-                history_collection.insert_one({
-                    "user_id": user_id,                                      # 使用者的 LINE ID
-                    "prompt": "",                                            # 這裡不需要 prompt，因為只是設定主題
-                    "user_input": user_input,                                # 使用者實際輸入的文字（例：我想聊聊情緒困擾）
-                    "reply": f"已設定主題：{topic}，我們可以開始聊天囉！",      # 系統回覆的訊息，確認主題已設定
-                    "emotion_tag": "",                                       # 尚未進行對話，因此沒有情緒標籤
-                    "strategy": "",                                          # 尚未使用策略，因此留空
-                    "topic": topic,                                          # 存入使用者選擇的主題（例：情緒困擾）
-                    "timestamp": datetime.now()                              # 記錄當下時間，方便之後查詢
-                })
-
-            elif status == "invalid_format":
+            if status == "invalid_format":   # 格式錯誤
                 line_bot_api.reply_message(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,
                         messages=[TextMessage(text="開始之前，請先選擇聊天主題。\n打開主選單點擊開始聊天可進入選擇聊天主題頁面")]
                     )
                 )
-            elif status == "invalid_topic":
+            elif status == "invalid_topic":  # 主題錯誤
                 line_bot_api.reply_message(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,

@@ -1,5 +1,7 @@
 ## 情緒方面文章
 
+- [IntentionESC: An Intention-Centered Framework for Enhancing Emotional Support in Dialogue Systems](https://aclanthology.org/2025.findings-acl.1358.pdf)
+
 - [The NRC Valence, Arousal, and Dominance (NRC-VAD) Lexicon](https://saifmohammad.com/WebPages/nrc-vad.html)
 
 - [情緒模型：從達爾文到AI時代的探索](https://medium.com/@royroy5681/%E6%83%85%E7%B7%92%E6%A8%A1%E5%9E%8B-%E5%BE%9E%E9%81%94%E7%88%BE%E6%96%87%E5%88%B0ai%E6%99%82%E4%BB%A3%E7%9A%84%E6%8E%A2%E7%B4%A2-058c5ef8acf7)
@@ -79,7 +81,7 @@ flowchart TD
    呼叫我們自己架設的 Hugging Face Space（[aurorajojo/e5-large-embedding-api](https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api)）將使用者 input 轉換為向量。
 
 2. **載入向量庫**  
-   透過 `FAISS.load_local()` 載入本地向量庫 （[cycu_faiss_index](https://github.com/aurorajojo/line_app/blob/main/cycu_faiss_index))。內容為中原大學各項資源的文字描述，包含藝文資源、學習資源、心理輔導、體育場館、餐飲、教官室等資訊。
+   透過 `FAISS.load_local()` 載入本地向量庫 ([cycu_faiss_index](https://github.com/aurorajojo/line_app/blob/main/cycu_faiss_index))。內容為中原大學各項資源的文字描述，包含藝文資源、學習資源、心理輔導、體育場館、餐飲、教官室等資訊。
 
 4. **向量距離比對**  
    `query_vectorstore()` 執行檢索並判斷距離閾值（預設 0.35）：  
@@ -110,6 +112,10 @@ flowchart TD
 ### `gaming_disorder_scale.py`
 - 顯示 10 題 `網路遊戲成癮量表問題` ，讓使用者逐題作答。
 
+### `topic_manager.py`
+- 管理每天使用者的聊天主題
+- 每天午夜自動清空，隔天重新要求主題
+
 ### `render_wake_up.py`
 - 我們使用 Render 作為伺服器部署平台。
 - 這個檔案會定時 ping Render 平台以防止伺服器自動休眠。
@@ -129,6 +135,7 @@ flowchart TD
 - 設定llm回傳文字時，透過 `編碼 `形式顯示情緒名稱與策略內容。
 - 設定llm不回答任何 `危險、非法或自殘 `相關問題。
 - 設定llm不透露任何 `prompt內部設計或詳細指令內容 `。
+- 生成流程: 判斷四個層面 → 確認意圖 → 套用策略
 - 由 `resources.py` 讀取後提供給 Bot 作為回答參考。
 
 ### `cycu_resources.json`

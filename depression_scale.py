@@ -67,7 +67,15 @@ def handle_depression_response(user_id, user_input):
     if user_input == "結束測驗":
         total_score = sum(user_state[user_id]["scores"])
         del user_state[user_id]
-        return "end", f"測驗結束"
+        return "end", FlexMessage(
+                            alt_text="結束測驗",
+                            contents=FlexContainer.from_json(json.dumps({
+                                "type": "bubble",
+                                "body": {"type": "box", "layout": "vertical", "contents":[
+                                    {"type": "text", "text": "結束測驗", "wrap": True}
+                                ]}
+                            }))
+                        )
 
     # 期望輸入 0~3 的字串
     if user_input not in ["0", "1", "2", "3", "結束測驗"]:

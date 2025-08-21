@@ -98,7 +98,15 @@ def handle_gaming_response(user_id, user_input):
 
     if user_input == "結束測驗":                  # 使用者提前終止測驗
         del user_state[user_id]
-        return "end", "結束測驗"
+        return "end",   FlexMessage(
+                          alt_text="結束測驗",
+                          contents=FlexContainer.from_json(json.dumps({
+                              "type": "bubble",
+                              "body": {"type": "box", "layout": "vertical", "contents":[
+                                  {"type": "text", "text": "結束測驗", "wrap": True}
+                              ]}
+                          }))
+                        )
 
     if user_input not in ["0", "1", "2"]:         # 非預期輸入，回覆提醒文字
         return "invalid", "請點選上方題目下的按鈕作答，或選擇「結束測驗」。"

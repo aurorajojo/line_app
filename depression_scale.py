@@ -95,8 +95,35 @@ def handle_depression_response(user_id, user_input):
         else:
             feedback = "你是不是會不由自主的沮喪、難過，無法掙脫?因為你的心已「感冒」，心病需要心藥醫，緊到醫院找專業及可信賴的醫檢查，透過他們的診療，你將不再覺得孤單、無助!"
 
-        return "end", f"恭喜完成量表！你的總分是 {total_score} 分。\n {feedback}"
+        return "end", make_feedback_bubble(total_score, feedback)
     
     else:
         # 回下一題 FlexMessage
         return "next", make_question_bubble(questions[idx], idx + 1)
+    
+
+# 建立回饋用的 Bubble
+def make_feedback_bubble(total_score, feedback):
+    bubble_json = {
+        "type": "bubble", "size": "mega",
+        "body": {
+            "type": "box", "layout": "vertical", "spacing": "md",
+            "contents": [
+                {"type": "text", "text": "憂鬱症量表結果", "weight": "bold", "size": "xl", "color": "#333333"},
+                {"type": "text", "text": f"你的總分是 {total_score} 分", "size": "lg", "color": "#000000"},
+                {"type": "separator", "margin": "md"},
+                {"type": "text", "text": feedback, "wrap": True, "size": "md", "color": "#555555", "margin": "md"}
+            ]
+        },
+        "footer": {
+            "type": "box", "layout": "vertical",
+            "contents": [
+                {"type": "button", "style": "primary", "action": {"type": "message", "label": "重新測驗", "text": "我要做憂鬱症量表"}, "color": "#8D8684FF"}
+            ]
+        }
+    }
+
+    return FlexMessage(
+        alt_text="憂鬱症量表結果",
+        contents=FlexContainer.from_json(json.dumps(bubble_json))
+    )

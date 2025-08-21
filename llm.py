@@ -16,7 +16,7 @@ def call_groq_llm(messages, model="llama-3.3-70b-versatile"):
         "model": model,
         "messages": messages,
         "temperature": 0.7,      # 創造力
-        "max_tokens": 1024       # 最大token數量
+        "max_tokens": 256        # 最大token數量
     }
 
     # 發送 POST 請求至 Groq API

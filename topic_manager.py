@@ -6,10 +6,14 @@
 # - 每天午夜自動清空，隔天重新要求主題
 # ==================================================
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
+from zoneinfo import ZoneInfo
 from linebot.v3.messaging import FlexMessage, FlexContainer
 import threading
 import json
+
+# === 台灣時區 ===
+TAIPEI_TZ = ZoneInfo("Asia/Taipei")
 
 # === 可選主題清單 ===
 VALID_TOPICS = [
@@ -23,42 +27,30 @@ VALID_TOPICS = [
 ]
 
 # === 存放今天已經選主題的使用者 ===
-# 結構：{ user_id: topic }
-# 範例：{ "U12345": "情緒困擾" }
 users_with_topic_today = {}
 
 def reset_users_with_topic():
-    """
-    功能：每天午夜清空使用者的主題紀錄
-    流程：
-      1. 把 users_with_topic_today 清空
-      2. 計算下一次午夜的時間
-      3. 安排自己在下次午夜再執行
-    """
+    """每天午夜 (台灣時間) 清空使用者的主題紀錄"""
     global users_with_topic_today
     users_with_topic_today.clear()
-    print("✅ 已清空今日主題使用者列表")
+    print("✅ 已清空今日主題使用者列表 (台灣時間午夜)")
 
-    # 計算下一次午夜的時間（明天 00:00）
-    now = datetime.now()
+    # 計算下一次台灣午夜
+    now = datetime.now(TAIPEI_TZ)
     tomorrow = now + timedelta(days=1)
-    next_midnight = datetime.combine(tomorrow.date(), datetime.min.time())
+    next_midnight = datetime.combine(tomorrow.date(), time.min, tzinfo=TAIPEI_TZ)
     seconds_until_midnight = (next_midnight - now).total_seconds()
 
-    # 設定排程，等到午夜再執行
     threading.Timer(seconds_until_midnight, reset_users_with_topic).start()
 
 def init_topic_manager():
-    """
-    功能：在程式啟動時，安排第一次的「午夜清空」
-    """
-    now = datetime.now()
-    next_midnight = datetime.combine(now.date() + timedelta(days=1), datetime.min.time())
+    """在程式啟動時，安排第一次的台灣午夜清空"""
+    now = datetime.now(TAIPEI_TZ)
+    next_midnight = datetime.combine(now.date() + timedelta(days=1), time.min, tzinfo=TAIPEI_TZ)
     seconds_until_midnight = (next_midnight - now).total_seconds()
 
-    # 等到午夜再執行 reset
     threading.Timer(seconds_until_midnight, reset_users_with_topic).start()
-    print("✅ 主題管理器已啟動，將在午夜自動清空")
+    print("✅ 主題管理器已啟動，將在台灣午夜 (00:00) 自動清空")
 
 def check_and_set_topic(user_id, user_input):
     """
@@ -122,7 +114,7 @@ def get_json(topic: str):
                 },
                 {
                     "type": "text",
-                    "text": "我們可以開始聊天囉 ✨",
+                    "text": "我們可以開始聊天囉 ✨\n很高興能陪你聊聊，放輕鬆，想說什麼都可以\n點擊左下角打開鍵盤開始輸入吧～",
                     "wrap": True,
                     "margin": "md",
                     "color": "#212121"

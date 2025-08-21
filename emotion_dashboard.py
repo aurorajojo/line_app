@@ -12,6 +12,7 @@ from mongo import history_collection
 為了讓情緒分析結果更有親和力，我們替每一種情緒設計了一個對應角色
 """
 
+# === 情緒對應角色（增加親和力用） ===
 EMOTION_CHARACTERS = {
     "焦慮": "🐇 小兔子焦焦",
     "悲傷": "🐟 小魚淚淚",
@@ -23,7 +24,7 @@ EMOTION_CHARACTERS = {
     "其他": "☁️ 神秘雲雲"
 }
 
-# 不同情緒對應顏色（背景 / 長條）
+# === 不同情緒的顏色（背景色 / 長條顏色） ===
 EMOTION_COLORS = {
     "焦慮": ("#27ACB2", "#0D8186"),
     "悲傷": ("#FF6B6E", "#DE5658"),
@@ -35,48 +36,67 @@ EMOTION_COLORS = {
 }
 
 def generate_text_dashboard(user_id):
-    user_data = list(history_collection.find({"user_id": user_id}))
-    if not user_data:
-        return FlexMessage(alt_text="情緒儀表板", contents=FlexContainer.from_json(json.dumps({
-            "type": "bubble",
-            "body": {"type": "box", "layout": "vertical", "contents":[
-                {"type": "text", "text": "查無對話紀錄，無法產生儀表板。", "wrap": True}
-            ]}
-        })))
+    """
+    依據使用者的歷史紀錄，生成情緒儀表板 FlexMessage
+    """
 
-    # 統計情緒
+    # 取得使用者的歷史對話紀錄
+    user_data = list(history_collection.find({"user_id": user_id}))
+
+    # === 如果沒有對話紀錄，回傳提示訊息 ===
+    if not user_data:
+        return FlexMessage(
+            alt_text="情緒儀表板",
+            contents=FlexContainer.from_json(json.dumps({
+                "type": "bubble",
+                "body": {"type": "box", "layout": "vertical", "contents":[
+                    {"type": "text", "text": "查無對話紀錄，無法產生儀表板。", "wrap": True}
+                ]}
+            }))
+        )
+
+    # === 統計情緒出現次數 ===
     emotion_counter = Counter()
     for doc in user_data:
-        emo = doc.get("emotion_tag", "").strip()
-        if emo and emo != "無法判斷":
-            emotion_counter[emo] += 1
+        emo = doc.get("emotion_tag", "").strip()  # 取出紀錄中的情緒標籤
+        if emo and emo != "無法判斷":  # 過濾掉「無法判斷」
+            emotion_counter[emo] += 1   # 累計情緒次數
 
+    # === 如果沒有情緒標記，回傳提示訊息 ===
     if not emotion_counter:
-        return FlexMessage(alt_text="情緒儀表板", contents=FlexContainer.from_json(json.dumps({
-            "type": "bubble",
-            "body": {"type": "box", "layout": "vertical", "contents":[
-                {"type": "text", "text": "沒有明確的情緒標記，無法產生儀表板。", "wrap": True}
-            ]}
-        })))
+        return FlexMessage(
+            alt_text="情緒儀表板",
+            contents=FlexContainer.from_json(json.dumps({
+                "type": "bubble",
+                "body": {"type": "box", "layout": "vertical", "contents":[
+                    {"type": "text", "text": "沒有明確的情緒標記，無法產生儀表板。", "wrap": True}
+                ]}
+            }))
+        )
 
-    sorted_emotions = emotion_counter.most_common(3)  # 只取前三大情緒
-    total = sum(emotion_counter.values())
+    # === 只取出現次數前七大的情緒 ===
+    sorted_emotions = emotion_counter.most_common(7)
+    total = sum(emotion_counter.values())  # 總情緒數量（計算比例用）
 
-    bubbles = []
+    bubbles = []  # 儲存每個情緒的 bubble
     for emo, count in sorted_emotions:
-        percent = round(count / total * 100)
-        character = EMOTION_CHARACTERS.get(emo, "❓")
-        bg_color, bar_color = EMOTION_COLORS.get(emo, ("#27ACB2", "#0D8186"))
+        percent = round(count / total * 100)  # 計算該情緒的百分比
+        character = EMOTION_CHARACTERS.get(emo, "❓")  # 找對應角色
+        bg_color, bar_color = EMOTION_COLORS.get(emo, ("#27ACB2", "#0D8186"))  # 找顏色
 
+        # === 建立單一情緒的 bubble 卡片 ===
         bubble = {
             "type": "bubble",
-            "size": "nano",
+            "size": "nano",  # 使用 nano 大小，適合多張卡片並列
             "header": {
                 "type": "box",
                 "layout": "vertical",
                 "contents": [
-                    {"type": "text", "text": character, "color": "#ffffff", "align": "start", "size": "md"},
+                    # 顯示角色
+                    {"type": "text", "text": character, "color": "#ffffff", "align": "start", "size": "md","wrap": True},
+                    # 顯示比例 %
                     {"type": "text", "text": f"{percent}%", "color": "#ffffff", "align": "start", "size": "xs", "margin": "lg"},
+                    # 進度條（長條圖）
                     {
                         "type": "box",
                         "layout": "vertical",
@@ -84,24 +104,25 @@ def generate_text_dashboard(user_id):
                             {
                                 "type": "box",
                                 "layout": "vertical",
-                                "contents": [{"type": "filler"}],
-                                "width": f"{percent}%",
-                                "backgroundColor": bar_color,
+                                "contents": [{"type": "filler"}],  # 內部填充
+                                "width": f"{percent}%",  # 進度條長度
+                                "backgroundColor": bar_color,  # 進度條顏色
                                 "height": "6px"
                             }
                         ],
-                        "backgroundColor": "#FFFFFF4D",
+                        "backgroundColor": "#FFFFFF4D",  # 外框背景
                         "height": "6px",
                         "margin": "sm"
                     }
                 ],
-                "backgroundColor": bg_color,
+                "backgroundColor": bg_color,  # 卡片上方背景色
                 "paddingAll": "12px"
             },
             "body": {
                 "type": "box",
                 "layout": "vertical",
                 "contents": [
+                    # 顯示情緒名稱
                     {"type": "text", "text": emo, "color": "#8C8C8C", "size": "sm", "wrap": True}
                 ],
                 "spacing": "md",
@@ -111,5 +132,11 @@ def generate_text_dashboard(user_id):
         }
         bubbles.append(bubble)
 
+    # === 建立 carousel（多張情緒卡片組成） ===
     flex_json = {"type": "carousel", "contents": bubbles}
-    return FlexMessage(alt_text="情緒儀表板", contents=FlexContainer.from_json(json.dumps(flex_json)))
+
+    # === 回傳 FlexMessage ===
+    return FlexMessage(
+        alt_text="情緒儀表板",
+        contents=FlexContainer.from_json(json.dumps(flex_json))
+    )

@@ -34,9 +34,14 @@ import re
 import json
 import time
 
-# 啟動午夜清空
+# 啟動午夜清空當天聊天主題紀錄
 init_topic_manager()
 
+# 白名單，訊息數量不受限制
+WHITELIST_USERS = {
+    "U5cfa3c6856002212a1a3efcf3598f565",
+    "U23db4a95096bb0d8162249bf11276b90"
+}
 
 # 設定 LINE Handler 與 Configuration
 handler = WebhookHandler(CHANNEL_SECRET)
@@ -58,6 +63,26 @@ def handle_text(event):
             )
         )
 
+        # === 每日訊息限制 ===
+        if user_id not in WHITELIST_USERS:
+            start_of_day = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            msg_count = history_collection.count_documents({
+                "user_id": user_id,
+                "timestamp": {"$gte": start_of_day},
+                "prompt": {"$ne": ""}   # 過濾掉選主題的紀錄
+            })
+
+            if msg_count >= 10:                            # 10 則訊息的上限
+                with ApiClient(configuration) as api_client:
+                    line_bot_api = MessagingApi(api_client)
+                    line_bot_api.reply_message(
+                        ReplyMessageRequest(
+                            reply_token=event.reply_token,
+                            messages=[TextMessage(text="您今天已達到 10 則訊息的上限，請明天再來聊聊喔！")]
+                        )
+                    )
+                return
+            
         # === 防呆判斷：輸入 0,1,2,3 或 結束測驗，卻尚未開始量表 ===
         if user_input in ["0", "1", "2", "3", "結束測驗"]:
             if user_id not in user_state and user_id not in user_state1:
@@ -115,7 +140,7 @@ def handle_text(event):
                 )
             elif result == "end":     # 結束測驗
                 line_bot_api.reply_message(
-                    ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=response)])
+                    ReplyMessageRequest(reply_token=event.reply_token, messages=[response])
                 )
             elif result == "invalid": # 非預期輸入，回覆提醒文字
                 line_bot_api.reply_message(
@@ -132,7 +157,7 @@ def handle_text(event):
                 )
             elif result == "end":     # 結束測驗
                 line_bot_api.reply_message(
-                    ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=response)])
+                    ReplyMessageRequest(reply_token=event.reply_token, messages=[response])
                 )
             elif result == "invalid": # 非預期輸入，回覆提醒文字
                 line_bot_api.reply_message(
@@ -140,36 +165,34 @@ def handle_text(event):
                 )
             return
         
-        # 檢查是否要設定主題
+        # === 檢查是否要設定主題 === 
         status, topic = check_and_set_topic(user_id, user_input)
 
         if status == "success":    # 要設定
 
             line_bot_api.reply_message(
-                ReplyMessageRequest(reply_token=event.reply_token, messages=[get_json(topic)])
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[get_json(topic)])  # 回覆一個 FlexMessage
             )
-            
+
+            # === 儲存對話紀錄進 MongoDB ===
             history_collection.insert_one({
                 "user_id": user_id,                                      # 使用者的 LINE ID
-                "prompt": "",                                            # 這裡不需要 prompt，因為只是設定主題
                 "user_input": user_input,                                # 使用者實際輸入的文字（例：我想聊聊情緒困擾）
                 "reply": f"已設定主題：{topic}，我們可以開始聊天囉！",      # 系統回覆的訊息，確認主題已設定
-                "emotion_tag": "",                                       # 尚未進行對話，因此沒有情緒標籤
-                "strategy": "",                                          # 尚未使用策略，因此留空
                 "topic": topic,                                          # 存入使用者選擇的主題（例：情緒困擾）
                 "timestamp": datetime.now()                              # 記錄當下時間，方便之後查詢
             })
 
             return 
 
-        # === 檢查是否已經有主題 ===
+        # === 沒有主題 ===
         if not has_topic(user_id):
 
             if status == "invalid_format":   # 格式錯誤
                 line_bot_api.reply_message(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,
-                        messages=[TextMessage(text="開始之前，請先選擇聊天主題。\n打開主選單點擊開始聊天可進入選擇聊天主題頁面")]
+                        messages=[TextMessage(text="開始聊天之前，請先選擇聊天主題。\n打開主選單點擊開始聊天即可進入選擇聊天主題頁面")]
                     )
                 )
             elif status == "invalid_topic":  # 主題錯誤
@@ -195,15 +218,15 @@ def handle_text(event):
         messages = [{"role": "system", "content": content}]
 
    
-        # 將歷史對話依序加入 messages，供 LLM 建立上下文
+        # === 將歷史對話依序加入 messages，供 LLM 建立上下文 === 
         for h in history:
             if "user_input" in h:
-                messages.append({"role": "user", "content": h["user_input"]})
+                messages.append({"role": "user", "content": f"【歷史】{h['user_input']}"})
             if "reply" in h:
-                messages.append({"role": "assistant", "content": h["reply"]})
+                messages.append({"role": "assistant", "content": f"【歷史】{h['reply']}"})
 
-        # 最新使用者輸入也加入上下文末端
-        messages.append({"role": "user", "content": user_input})
+        # === 最新使用者輸入也加入上下文末端 === 
+        messages.append({"role": "user", "content": f"【本次】{user_input}"})
 
         # === 呼叫 LLM 產生回覆 ===
         reply = call_groq_llm(messages)
@@ -225,7 +248,7 @@ def handle_text(event):
             "timestamp": datetime.now()   # 時間
         })
 
-        # 把(數字) [數字] {數字} ... 刪掉
+        # === 把(數字) [數字] {數字} ... 刪掉 === 
         reply = re.sub(r"[\(\[\{]\d+[\)\]\}]", "", reply).strip()
         
         # === 回覆使用者 ===

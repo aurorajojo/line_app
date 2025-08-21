@@ -53,6 +53,37 @@ def make_question_bubble(question_text, q_number):
         contents=FlexContainer.from_json(json.dumps(bubble_json))
     )
 
+
+# 結果 bubble
+def make_result_bubble(total_score, result_text):
+    
+    bubble_json = {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+                {"type": "text", "text": "遊戲成癮量表結果", "wrap": True, "weight": "bold", "size": "xl", "align": "start"},
+                {"type": "text", "text": f"你的總分是 {total_score} 分", "size": "lg", "margin": "md", "align": "start"},
+                {"type": "separator", "margin": "md"},
+                {"type": "text", "text": result_text, "wrap": True, "margin": "md"}
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {"type": "button", "style": "primary", "action": {"type": "message", "label": "重新測驗", "text": "我要做遊戲成癮量表"}, "color": "#8D8684FF"}
+            ]
+        }
+    }
+
+    return FlexMessage(
+        alt_text="網路遊戲成癮量表結果",
+        contents=FlexContainer.from_json(json.dumps(bubble_json))
+    )
+
 def start_gaming_test(user_id):  # 開始作答
     user_state[user_id] = {
         "current_q": 0,         # 目前作答來到的題數
@@ -82,7 +113,7 @@ def handle_gaming_response(user_id, user_input):
         total_score = sum(user_state[user_id]["scores"])
         result_text = get_final_result(user_state[user_id]["scores"])  # 呼叫函式，判斷量表結果
         del user_state[user_id]
-        return "end", f"恭喜完成量表！你的總分是 {total_score} 分。\n{result_text}" # 回傳結果
+        return "end", make_result_bubble(total_score, result_text) # 回傳結果
     
     else:                         # 尚未完成量表，繼續作答
         return "next", make_question_bubble(questions[idx], idx + 1)

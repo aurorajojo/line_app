@@ -18,7 +18,6 @@ from gaming_disorder_scale import user_state as user_state1
 from extract_topic import extract_topic
 from vector_search import query_vectorstore
 from topic_manager import (
-    init_topic_manager,
     check_and_set_topic,
     has_topic,
     get_json,

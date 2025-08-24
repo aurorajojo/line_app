@@ -256,7 +256,7 @@ def handle_text(event):
         emotion_tag = extract_emotion_from_reply(reply)           # 找情緒
         strategy_tags = extract_strategies(reply)                 # 找策略
         topic_tags = extract_topic(user_input, user_id)           # 找主題
-        intention_tag = extract_intentions(user_input, user_id)   # 找意圖
+        intention_tag = extract_intentions(reply)   # 找意圖
 
         history_collection.insert_one({
             "user_id": user_id,                                 # 使用者id

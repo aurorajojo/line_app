@@ -7,11 +7,11 @@ from linebot.v3 import WebhookHandler
 from linebot.v3.messaging import ApiClient, Configuration, ShowLoadingAnimationRequest, FlexMessage
 
 from config import CHANNEL_SECRET, CHANNEL_ACCESS_TOKEN
-from mongo import history_collection
+from mongo import history_collection, summary_collection
 from resources import base_prompt, cycu_resources
 from llm import call_groq_llm
 from depression_scale import start_depression_test, handle_depression_response, user_state
-from emotion_strategy_utils import extract_emotion_from_reply, extract_strategies
+from emotion_strategy_utils import extract_emotion_from_reply, extract_strategies, extract_intentions
 from emotion_dashboard import generate_text_dashboard
 from gaming_disorder_scale import start_gaming_test, handle_gaming_response
 from gaming_disorder_scale import user_state as user_state1
@@ -33,6 +33,8 @@ from datetime import datetime
 import re
 import json
 import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 # 啟動午夜清空當天聊天主題紀錄
 init_topic_manager()
@@ -165,6 +167,27 @@ def handle_text(event):
                 )
             return
         
+        # === 查看最近摘要 ===
+        if user_input == "我要看摘要":
+            # 從 summary_collection 找該使用者最近的一筆摘要
+            last_summary = summary_collection.find_one(
+                {"user_id": user_id},
+                sort=[("date", -1)]  # 按日期由新到舊
+            )
+
+            if last_summary:
+                summary_text = last_summary["summary"]
+            else:
+                summary_text = "目前尚無摘要喔～等你聊一陣子後再查看吧！"
+
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=summary_text)]
+                )
+            )
+            return
+        
         # === 檢查是否要設定主題 === 
         status, topic = check_and_set_topic(user_id, user_input)
 
@@ -233,19 +256,21 @@ def handle_text(event):
 
 
         # === 儲存對話紀錄進 MongoDB ===
-        emotion_tag = extract_emotion_from_reply(reply)  # 找情緒
-        strategy_tags = extract_strategies(reply)        # 找策略
-        topic_tags = extract_topic(user_input, user_id)  # 找主題
+        emotion_tag = extract_emotion_from_reply(reply)           # 找情緒
+        strategy_tags = extract_strategies(reply)                 # 找策略
+        topic_tags = extract_topic(user_input, user_id)           # 找主題
+        intention_tag = extract_intentions(user_input, user_id)   # 找意圖
 
         history_collection.insert_one({
-            "user_id": user_id,           # 使用者id
-            "prompt": messages,           # prompt
-            "user_input": user_input,     # 使用者輸入
-            "reply": reply,               # llm回覆
-            "emotion_tag": emotion_tag,   # 情緒
-            "strategy": strategy_tags,    # 策略
-            "topic": topic_tags,          # 主題
-            "timestamp": datetime.now()   # 時間
+            "user_id": user_id,                                 # 使用者id
+            "prompt": messages,                                 # prompt
+            "user_input": user_input,                           # 使用者輸入
+            "reply": reply,                                     # llm回覆
+            "emotion_tag": emotion_tag,                         # 情緒
+            "strategy": strategy_tags,                          # 策略
+            "intention": intention_tag,                         # 意圖
+            "topic": topic_tags,                                # 主題
+            "timestamp": datetime.now(ZoneInfo("Asia/Taipei"))  # 台灣時間  
         })
 
         # === 把(數字) [數字] {數字} ... 刪掉 === 

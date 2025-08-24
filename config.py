@@ -2,6 +2,10 @@
 # ===== 儲存各種設定值與金鑰 =====
 
 import os
+from dotenv import load_dotenv
+
+# 載入 .env
+load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -11,6 +15,7 @@ CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "")
 
 # Groq API 設定
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+SUMMARY_API_KEY = os.getenv("SUMMARY_API_KEY", "")
 GROQ_API_URL = os.getenv("GROQ_API_URL", "https://api.groq.com/openai/v1/chat/completions")
 
 # MongoDB 連線字串

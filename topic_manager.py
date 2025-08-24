@@ -6,6 +6,7 @@
 # - 每天午夜自動清空，隔天重新要求主題
 # ==================================================
 
+from daily_summary import check_and_summarize
 from datetime import datetime, timedelta, time
 from zoneinfo import ZoneInfo
 from linebot.v3.messaging import FlexMessage, FlexContainer
@@ -28,29 +29,18 @@ VALID_TOPICS = [
 
 # === 存放今天已經選主題的使用者 ===
 users_with_topic_today = {}
+last_reset_date = None   # 紀錄上次清空的日期（台灣日期）
 
-def reset_users_with_topic():
-    """每天午夜 (台灣時間) 清空使用者的主題紀錄"""
-    global users_with_topic_today
-    users_with_topic_today.clear()
-    print("✅ 已清空今日主題使用者列表 (台灣時間午夜)")
+def reset_if_new_day(user_id):
+    """檢查是否跨日，如果是就清空"""
+    global last_reset_date, users_with_topic_today
 
-    # 計算下一次台灣午夜
-    now = datetime.now(TAIPEI_TZ)
-    tomorrow = now + timedelta(days=1)
-    next_midnight = datetime.combine(tomorrow.date(), time.min, tzinfo=TAIPEI_TZ)
-    seconds_until_midnight = (next_midnight - now).total_seconds()
-
-    threading.Timer(seconds_until_midnight, reset_users_with_topic).start()
-
-def init_topic_manager():
-    """在程式啟動時，安排第一次的台灣午夜清空"""
-    now = datetime.now(TAIPEI_TZ)
-    next_midnight = datetime.combine(now.date() + timedelta(days=1), time.min, tzinfo=TAIPEI_TZ)
-    seconds_until_midnight = (next_midnight - now).total_seconds()
-
-    threading.Timer(seconds_until_midnight, reset_users_with_topic).start()
-    print("✅ 主題管理器已啟動，將在台灣午夜 (00:00) 自動清空")
+    today = datetime.now(TAIPEI_TZ).date()
+    if last_reset_date != today:
+        check_and_summarize(user_id)   # 幫上次諮商那天做摘要
+        users_with_topic_today.clear()
+        last_reset_date = today
+        print(f"✅ 已清空主題使用者列表 ({today} 台灣時間)")
 
 def check_and_set_topic(user_id, user_input):
     """
@@ -63,6 +53,9 @@ def check_and_set_topic(user_id, user_input):
       - ("invalid_format", None)   -> 格式錯誤（不是以「我想聊聊」開頭）
       - ("invalid_topic", None)    -> 主題不在選項內
     """
+
+    reset_if_new_day(user_id)             # 每次檢查前，先確認是不是新的一天
+
     if not user_input.startswith("我想聊聊"):
         return "invalid_format", None
 

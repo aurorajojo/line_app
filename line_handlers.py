@@ -35,8 +35,6 @@ import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-# 啟動午夜清空當天聊天主題紀錄
-init_topic_manager()
 
 # 白名單，訊息數量不受限制
 WHITELIST_USERS = {

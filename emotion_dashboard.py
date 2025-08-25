@@ -58,7 +58,7 @@ def generate_text_dashboard(user_id):
     # === 統計情緒出現次數 ===
     emotion_counter = Counter()
     for doc in user_data:
-        emo = doc.get("emotion_tag", "").strip()  # 取出紀錄中的情緒標籤
+        emo = doc.get("emotion", "").strip()  # 取出紀錄中的情緒標籤
         if emo and emo != "無法判斷":  # 過濾掉「無法判斷」
             emotion_counter[emo] += 1   # 累計情緒次數
 

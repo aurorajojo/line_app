@@ -26,32 +26,28 @@ def check_and_summarize(user_id):
 
         # 如果最後一次對話不是今天
         if last_date < today:
+
+            # 將日期轉成完整 datetime 範圍
+            day_start = datetime.combine(last_date, datetime.min.time())
+            day_end = datetime.combine(last_date, datetime.max.time())
+
             # 檢查該日期是否已有摘要
-            summary_doc = summary_collection.find_one({
+            summary_doc = list(history_collection.find({
                 "user_id": user_id,
-                "date": last_date
-            })
+                "date": {"$gte": day_start, "$lte": day_end}   # 用範圍查詢
+            }))
 
             if not summary_doc:
-                # 撈出那天的所有對話
-                day_start = datetime.combine(last_date, datetime.min.time())
-                day_end = datetime.combine(last_date, datetime.max.time())
 
-                chats = list(history_collection.find({
+                # 產生摘要（呼叫 LLM）
+                summary_text = generate_summary_with_llm(summary_doc)
+
+                # 存進資料庫
+                summary_collection.insert_one({
                     "user_id": user_id,
-                    "timestamp": {"$gte": day_start, "$lte": day_end}
-                }))
+                    "summary": summary_text,
+                    "created_at": now_taiwan()
+                })
 
-                if chats:
-                    # 產生摘要（呼叫 LLM）
-                    summary_text = generate_summary_with_llm(chats)
-
-                    # 存進資料庫
-                    summary_collection.insert_one({
-                        "user_id": user_id,
-                        "date": last_date,
-                        "summary": summary_text,
-                        "created_at": now_taiwan()
-                    })
     else:
         print("尚無對話紀錄")

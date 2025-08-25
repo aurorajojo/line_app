@@ -16,13 +16,13 @@ import json
 
 # === 可選主題清單 ===
 VALID_TOPICS = [
-    "情緒困擾",
-    "人際關係",
-    "課業壓力",
-    "生涯迷茫",
-    "校園適應",
-    "自我價值",
-    "其他"
+    "我想聊聊情緒困擾",
+    "我想聊聊人際關係",
+    "我想聊聊課業壓力",
+    "我想聊聊生涯迷茫",
+    "我想聊聊校園適應",
+    "我想聊聊自我價值",
+    "我想聊聊其他"
 ]
 
 
@@ -43,8 +43,8 @@ def check_and_set_topic(user_id, user_input):
     if not user_input.startswith("我想聊聊"):
         return "invalid_format", None
 
-    topic_candidate = user_input.replace("我想聊聊", "").strip()
-    if topic_candidate in VALID_TOPICS:
+    if user_input in VALID_TOPICS:
+        topic_candidate = user_input.replace("我想聊聊", "").strip()
         return "success", topic_candidate
     else:
         return "invalid_topic", None
@@ -64,7 +64,7 @@ def has_topic(user_id):
     exists = history_collection.find_one({
         "user_id": user_id,
         "timestamp": {"$gte": start_of_day, "$lte": end_of_day},
-        "user_input": {"$regex": "^我想聊聊(" + "|".join(VALID_TOPICS) + ")$"}
+        "user_input":  {"$in": VALID_TOPICS}
     })
 
     return exists is not None

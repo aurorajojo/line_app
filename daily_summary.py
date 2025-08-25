@@ -34,8 +34,8 @@ def check_and_summarize(user_id):
 
             if not summary_doc:
                 # 撈出那天的所有對話
-                day_start = datetime.combine(last_date, datetime.min.time(), tzinfo=TAIPEI_TZ)
-                day_end = datetime.combine(last_date, datetime.max.time(), tzinfo=TAIPEI_TZ)
+                day_start = datetime.combine(last_date, datetime.min.time())
+                day_end = datetime.combine(last_date, datetime.max.time())
 
                 chats = list(history_collection.find({
                     "user_id": user_id,

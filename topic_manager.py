@@ -7,14 +7,12 @@
 # ==================================================
 
 from daily_summary import check_and_summarize
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from mongo import summary_collection
 from linebot.v3.messaging import FlexMessage, FlexContainer
-import threading
 import json
 
-# === 台灣時區 ===
-TAIPEI_TZ = ZoneInfo("Asia/Taipei")
 
 # === 可選主題清單 ===
 VALID_TOPICS = [
@@ -27,19 +25,6 @@ VALID_TOPICS = [
     "其他"
 ]
 
-# === 存放今天已經選主題的使用者 ===
-users_with_topic_today = {}
-last_reset_date = None   # 紀錄上次清空的日期（台灣日期）
-
-def reset_if_new_day():
-    """檢查是否跨日，如果是就清空"""
-    global last_reset_date, users_with_topic_today
-
-    today = (datetime.now()+ timedelta(hours=8)).date()
-    if last_reset_date != today:
-        users_with_topic_today.clear()
-        last_reset_date = today
-        print(f"✅ 已清空主題使用者列表 ({today} 台灣時間)")
 
 def check_and_set_topic(user_id, user_input):
     """
@@ -53,7 +38,6 @@ def check_and_set_topic(user_id, user_input):
       - ("invalid_topic", None)    -> 主題不在選項內
     """
 
-    reset_if_new_day()                    # 每次檢查前，先確認是不是新的一天
     check_and_summarize(user_id)          # 幫上次諮商那天做摘要
 
     if not user_input.startswith("我想聊聊"):
@@ -61,17 +45,29 @@ def check_and_set_topic(user_id, user_input):
 
     topic_candidate = user_input.replace("我想聊聊", "").strip()
     if topic_candidate in VALID_TOPICS:
-        users_with_topic_today[user_id] = topic_candidate
         return "success", topic_candidate
     else:
         return "invalid_topic", None
 
 def has_topic(user_id):
     """
-    檢查使用者今天是否已經設定過主題
+    檢查使用者今天是否已經設定過主題（以 '我想聊聊' 開頭）
     回傳：True / False
     """
-    return user_id in users_with_topic_today
+    # 取得台灣時間今天的起始與結束
+    now = datetime.now() + timedelta(hours=8)
+    today = now.date()
+    start_of_day = datetime.combine(today, datetime.min.time())
+    end_of_day = datetime.combine(today, datetime.max.time())
+
+    # 查詢今天該 user 是否有輸入 "我想聊聊..." 開頭的內容
+    exists = summary_collection.find_one({
+        "user_id": user_id,
+        "timestamp": {"$gte": start_of_day, "$lte": end_of_day},
+        "user_input": {"$regex": "^我想聊聊(" + "|".join(VALID_TOPICS) + ")$"}
+    })
+
+    return exists is not None
 
 def get_json(topic: str):
     bubble_json = {

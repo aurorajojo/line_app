@@ -103,7 +103,7 @@ def handle_gaming_response(user_id, user_input):
                           contents=FlexContainer.from_json(json.dumps({
                               "type": "bubble",
                               "body": {"type": "box", "layout": "vertical", "contents":[
-                                  {"type": "text", "text": "結束測驗", "wrap": True}
+                                  {"type": "text", "text": "測驗結束", "wrap": True}
                               ]}
                           }))
                         )

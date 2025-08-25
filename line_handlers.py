@@ -24,15 +24,8 @@ from topic_manager import (
     VALID_TOPICS
 )
 
-
-from langchain_community.vectorstores import FAISS
-from langchain_huggingface import HuggingFaceEmbeddings
-import torch
 from datetime import datetime
 import re
-import json
-import time
-from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
 
 # 白名單，訊息數量不受限制
@@ -63,7 +56,7 @@ def handle_text(event):
 
         # === 每日訊息限制 ===
         if user_id not in WHITELIST_USERS:
-            start_of_day = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            start_of_day = (datetime.now()+ timedelta(hours=8)).replace(hour=0, minute=0, second=0, microsecond=0)
             msg_count = history_collection.count_documents({
                 "user_id": user_id,
                 "timestamp": {"$gte": start_of_day},
@@ -71,14 +64,13 @@ def handle_text(event):
             })
 
             if msg_count >= 10:                            # 10 則訊息的上限
-                with ApiClient(configuration) as api_client:
-                    line_bot_api = MessagingApi(api_client)
-                    line_bot_api.reply_message(
-                        ReplyMessageRequest(
-                            reply_token=event.reply_token,
-                            messages=[TextMessage(text="您今天已達到 10 則訊息的上限，請明天再來聊聊喔！")]
-                        )
+
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text="您今天已達到 10 則訊息的上限，請明天再來聊聊喔！")]
                     )
+                )
                 return
             
         # === 防呆判斷：輸入 0,1,2,3 或 結束測驗，卻尚未開始量表 ===
@@ -254,15 +246,15 @@ def handle_text(event):
         # === 儲存對話紀錄進 MongoDB ===
         emotion_tag = extract_emotion_from_reply(reply)           # 找情緒
         strategy_tags = extract_strategies(reply)                 # 找策略
+        intention_tag = extract_intentions(reply)                 # 找意圖
         topic_tags = extract_topic(user_input, user_id)           # 找主題
-        intention_tag = extract_intentions(reply)   # 找意圖
 
         history_collection.insert_one({
             "user_id": user_id,                                 # 使用者id
             "prompt": messages,                                 # prompt
             "user_input": user_input,                           # 使用者輸入
             "reply": reply,                                     # llm回覆
-            "emotion_tag": emotion_tag,                         # 情緒
+            "emotion": emotion_tag,                             # 情緒
             "strategy": strategy_tags,                          # 策略
             "intention": intention_tag,                         # 意圖
             "topic": topic_tags,                                # 主題

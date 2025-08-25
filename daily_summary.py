@@ -32,12 +32,18 @@ def check_and_summarize(user_id):
             day_end = datetime.combine(last_date, datetime.max.time())
 
             # 檢查該日期是否已有摘要
-            summary_doc = list(history_collection.find({
+            doc = list(summary_collection.find({
                 "user_id": user_id,
                 "date": {"$gte": day_start, "$lte": day_end}   # 用範圍查詢
             }))
 
-            if not summary_doc:
+            if not doc:
+
+                # 統整要摘要的對話
+                summary_doc = list(history_collection.find({
+                    "user_id": user_id,
+                    "timestamp": {"$gte": day_start, "$lte": day_end}   # 用範圍查詢
+                }))
 
                 # 產生摘要（呼叫 LLM）
                 summary_text = generate_summary_with_llm(summary_doc)
@@ -45,6 +51,7 @@ def check_and_summarize(user_id):
                 # 存進資料庫
                 summary_collection.insert_one({
                     "user_id": user_id,
+                    "date":day_start,
                     "summary": summary_text,
                     "created_at": now_taiwan()
                 })

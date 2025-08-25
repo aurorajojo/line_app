@@ -263,6 +263,7 @@ def handle_text(event):
 
         # === 把(數字) [數字] {數字} ... 刪掉 === 
         reply = re.sub(r"[\(\[\{]\d+[\)\]\}]", "", reply).strip()
+        reply = reply.replace("【本次】", "").strip()
         
         # === 回覆使用者 ===
         line_bot_api.reply_message(

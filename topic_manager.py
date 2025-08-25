@@ -9,7 +9,7 @@
 from daily_summary import check_and_summarize
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from mongo import summary_collection
+from mongo import history_collection
 from linebot.v3.messaging import FlexMessage, FlexContainer
 import json
 
@@ -61,7 +61,7 @@ def has_topic(user_id):
     end_of_day = datetime.combine(today, datetime.max.time())
 
     # 查詢今天該 user 是否有輸入 "我想聊聊..." 開頭的內容
-    exists = summary_collection.find_one({
+    exists = history_collection.find_one({
         "user_id": user_id,
         "timestamp": {"$gte": start_of_day, "$lte": end_of_day},
         "user_input": {"$regex": "^我想聊聊(" + "|".join(VALID_TOPICS) + ")$"}

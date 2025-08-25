@@ -31,13 +31,12 @@ VALID_TOPICS = [
 users_with_topic_today = {}
 last_reset_date = None   # 紀錄上次清空的日期（台灣日期）
 
-def reset_if_new_day(user_id):
+def reset_if_new_day():
     """檢查是否跨日，如果是就清空"""
     global last_reset_date, users_with_topic_today
 
-    today = datetime.now(TAIPEI_TZ).date()
+    today = (datetime.now()+ timedelta(hours=8)).date()
     if last_reset_date != today:
-        check_and_summarize(user_id)   # 幫上次諮商那天做摘要
         users_with_topic_today.clear()
         last_reset_date = today
         print(f"✅ 已清空主題使用者列表 ({today} 台灣時間)")
@@ -54,7 +53,8 @@ def check_and_set_topic(user_id, user_input):
       - ("invalid_topic", None)    -> 主題不在選項內
     """
 
-    reset_if_new_day(user_id)             # 每次檢查前，先確認是不是新的一天
+    reset_if_new_day()                    # 每次檢查前，先確認是不是新的一天
+    check_and_summarize(user_id)          # 幫上次諮商那天做摘要
 
     if not user_input.startswith("我想聊聊"):
         return "invalid_format", None

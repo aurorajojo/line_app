@@ -32,9 +32,8 @@ from datetime import datetime
 import re
 import json
 import time
-from datetime import datetime
 from zoneinfo import ZoneInfo
-
+from datetime import datetime, timedelta
 
 # 白名單，訊息數量不受限制
 WHITELIST_USERS = {
@@ -200,7 +199,7 @@ def handle_text(event):
                 "user_input": user_input,                                # 使用者實際輸入的文字（例：我想聊聊情緒困擾）
                 "reply": f"已設定主題：{topic}，我們可以開始聊天囉！",      # 系統回覆的訊息，確認主題已設定
                 "topic": topic,                                          # 存入使用者選擇的主題（例：情緒困擾）
-                "timestamp": datetime.now()                              # 記錄當下時間，方便之後查詢
+                "timestamp": datetime.now()   + timedelta(hours=8)       # 記錄當下時間，方便之後查詢
             })
 
             return 
@@ -267,7 +266,7 @@ def handle_text(event):
             "strategy": strategy_tags,                          # 策略
             "intention": intention_tag,                         # 意圖
             "topic": topic_tags,                                # 主題
-            "timestamp": datetime.now(ZoneInfo("Asia/Taipei"))  # 台灣時間  
+            "timestamp": datetime.now()  + timedelta(hours=8)   # 台灣時間  
         })
 
         # === 把(數字) [數字] {數字} ... 刪掉 === 

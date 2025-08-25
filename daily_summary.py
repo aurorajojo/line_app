@@ -1,13 +1,15 @@
 # daily_summary.py
 # 幫上次諮商那天做摘要，存到資料庫
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from pymongo import DESCENDING
 from mongo import history_collection, summary_collection
 from llm import generate_summary_with_llm  
 
-TAIPEI_TZ = ZoneInfo("Asia/Taipei")
+def now_taiwan() -> datetime:
+    """取得現在的台灣時間（直接 +8 小時，不帶 tzinfo）"""
+    return datetime.now() + timedelta(hours=8)
 
 def check_and_summarize(user_id):
     # 取得該使用者最後一筆對話
@@ -16,11 +18,11 @@ def check_and_summarize(user_id):
         sort=[("timestamp", DESCENDING)]
     )
 
-    today = datetime.now(TAIPEI_TZ).date()
+    today = now_taiwan().date()
 
     if last_doc:
         # 最後一筆對話的日期（台灣時間）
-        last_date = last_doc["timestamp"].astimezone(TAIPEI_TZ).date()
+        last_date = last_doc["timestamp"].date()
 
         # 如果最後一次對話不是今天
         if last_date < today:
@@ -49,7 +51,7 @@ def check_and_summarize(user_id):
                         "user_id": user_id,
                         "date": last_date,
                         "summary": summary_text,
-                        "created_at": datetime.now(TAIPEI_TZ)
+                        "created_at": now_taiwan()
                     })
     else:
         print("尚無對話紀錄")

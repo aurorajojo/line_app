@@ -6,6 +6,7 @@ from collections import Counter
 from linebot.v3.messaging import FlexMessage, FlexContainer
 import json
 from mongo import history_collection
+from datetime import datetime, timedelta
 
 """
 根據使用者的歷史對話紀錄，產生情緒儀表板，分析使用者的情緒組成
@@ -40,9 +41,16 @@ def generate_text_dashboard(user_id):
     依據使用者的歷史紀錄，生成情緒儀表板 FlexMessage
     """
 
-    # 取得使用者的歷史對話紀錄
-    user_data = list(history_collection.find({"user_id": user_id}))
+    # 取得一週前的日期
+    today = datetime.now() + timedelta(hours=8)
+    one_week_ago = today - timedelta(days=7)
 
+    # 查詢過去七天的紀錄
+    user_data = list(history_collection.find({
+        "user_id": user_id,
+        "timestamp": {"$gte": one_week_ago, "$lte": today}  # 只取最近七天
+    }))
+    
     # === 如果沒有對話紀錄，回傳提示訊息 ===
     if not user_data:
         return FlexMessage(

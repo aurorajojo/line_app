@@ -37,8 +37,8 @@ def call_summary_llm(messages, model="llama-3.3-70b-versatile"):
     payload = {
         "model": model,
         "messages": messages,
-        "temperature": 0.3,   # 摘要偏精準
-        "max_tokens": 50      # 摘要長度
+        "temperature": 0.7,   # 摘要偏精準
+        "max_tokens": 1024      # 摘要長度
     }
 
     response = requests.post(GROQ_API_URL, headers=headers, json=payload)
@@ -57,15 +57,24 @@ def generate_summary_with_llm(chats):
     messages = [
         {
             "role": "system",
-            "content": "你是一個心理諮商助理，請將以下使用者對話整理成每日摘要，以第二人稱描述"
+            "content": """你是一位心理諮商助理，任務是幫助總結用戶一天的聊天內容。  
+                            請用 3～5 點的條列方式，整理出：
+                            1. 使用者當天主要談到的主題或困擾  
+                            2. 使用者的情緒狀態變化  
+                            3. 諮商過程中的重要洞見或進展  
+                            4. 建議後續可以關注的方向  
+
+                            請保持語氣專業、中立，不要加入臆測或診斷。"""
         }
     ]
 
     # 將使用者與 LLM 對話加入 messages
     for c in chats:
-        messages.append({"role": "user", "content": c["user_input"]})
-        messages.append({"role": "assistant", "content": c["reply"]})
+        if "user_input" in c:
+            messages.append({"role": "user", "content": f"{c['user_input']}"})
+        if "reply" in c:
+            messages.append({"role": "assistant", "content": f"{c['reply']}"})
 
     # 呼叫 Groq API
     summary = call_summary_llm(messages)
-    return summary
+    return summary, messages

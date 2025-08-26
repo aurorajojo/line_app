@@ -46,12 +46,13 @@ def check_and_summarize(user_id):
                 }))
 
                 # 產生摘要（呼叫 LLM）
-                summary_text = generate_summary_with_llm(summary_doc)
+                summary_text, messages = generate_summary_with_llm(summary_doc)
 
                 # 存進資料庫
                 summary_collection.insert_one({
                     "user_id": user_id,
                     "date":day_start,
+                    "messages":messages,
                     "summary": summary_text,
                     "created_at": now_taiwan()
                 })

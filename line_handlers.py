@@ -23,6 +23,7 @@ from topic_manager import (
     get_json,
     VALID_TOPICS
 )
+from weekly_summary import generate_weekly_summary
 
 from datetime import datetime
 import re
@@ -157,22 +158,9 @@ def handle_text(event):
         
         # === 查看最近摘要 ===
         if user_input == "我要看摘要":
-            # 從 summary_collection 找該使用者最近的一筆摘要
-            last_summary = summary_collection.find_one(
-                {"user_id": user_id},
-                sort=[("date", -1)]  # 按日期由新到舊
-            )
-
-            if last_summary:
-                summary_text = last_summary["summary"]
-            else:
-                summary_text = "目前尚無摘要喔～等你聊一陣子後再查看吧！"
-
+            flex = generate_weekly_summary(user_id)
             line_bot_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[TextMessage(text=summary_text)]
-                )
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[flex])
             )
             return
         

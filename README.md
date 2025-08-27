@@ -114,7 +114,10 @@ flowchart TD
 - 每天午夜自動清空，隔天重新要求主題
 
 ### `daily_summary.py`
-- 幫上次諮商那天做摘要，存到資料庫
+- 每日對話前，幫上次諮商那天做摘要，存到資料庫
+
+### `weekly_summary.py`
+- 輸出七天以來每日的摘要
 
 ### `render_wake_up.py`
 - 我們使用 Render 作為伺服器部署平台。

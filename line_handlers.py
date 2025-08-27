@@ -236,7 +236,9 @@ def handle_text(event):
         strategy_tags = extract_strategies(reply)                 # 找策略
         intention_tag = extract_intentions(reply)                 # 找意圖
         topic_tags = extract_topic(user_input, user_id)           # 找主題
-
+        reply = reply.replace("【本次】", "").strip()
+        reply = reply.replace("【歷史】", "").strip()
+        
         history_collection.insert_one({
             "user_id": user_id,                                 # 使用者id
             "prompt": messages,                                 # prompt
@@ -251,7 +253,7 @@ def handle_text(event):
 
         # === 把(數字) [數字] {數字} ... 刪掉 === 
         reply = re.sub(r"[\(\[\{]\d+[\)\]\}]", "", reply).strip()
-        reply = reply.replace("【本次】", "").strip()
+
         
         # === 回覆使用者 ===
         line_bot_api.reply_message(

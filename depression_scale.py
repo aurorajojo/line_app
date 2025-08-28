@@ -3,6 +3,8 @@
 
 from linebot.v3.messaging import FlexMessage, FlexContainer
 import json
+from mongo import scale_collection
+from datetime import datetime, timedelta
 
 # 台灣人憂鬱症量表題目，共18題
 questions = [
@@ -65,6 +67,7 @@ def handle_depression_response(user_id, user_input):
         return None, None
 
     if user_input == "結束測驗":
+
         total_score = sum(user_state[user_id]["scores"])
         del user_state[user_id]
         return "end", FlexMessage(
@@ -89,7 +92,16 @@ def handle_depression_response(user_id, user_input):
     idx = user_state[user_id]["current_q"]
 
     if idx >= len(questions):   # 量表結束，計算分數
+
         total_score = sum(user_state[user_id]["scores"])
+        # 存到 MongoDB
+        scale_collection.insert_one({
+            "user_id": user_id,
+            "total_score": total_score,
+            "type": "depression",
+            "timestamp": datetime.now()  + timedelta(hours=8)
+        })
+
         del user_state[user_id]
 
         if total_score <= 8:
@@ -126,7 +138,9 @@ def make_feedback_bubble(total_score, feedback):
         "footer": {
             "type": "box", "layout": "vertical",
             "contents": [
-                {"type": "button", "style": "primary", "action": {"type": "message", "label": "重新測驗", "text": "我要做憂鬱症量表"}, "color": "#8D8684FF"}
+                {"type": "button", "style": "primary", "action": {"type": "message", "label": "重新測驗", "text": "我要做憂鬱症量表"}, "color": "#8D8684FF"},
+                {"type": "separator", "margin": "sm" },
+                {"type": "button", "style": "primary", "action": {"type": "message", "label": "查看歷史", "text": "我要看憂鬱症量表歷史"}, "color": "#8D8684FF"}
             ]
         }
     }

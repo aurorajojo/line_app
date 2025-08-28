@@ -1,10 +1,10 @@
 # line_handlers.py
 # ===== 處理所有來自 LINE 的訊息事件（目前只處理文字訊息） =====
 
-from linebot.v3.webhooks import MessageEvent, TextMessageContent
+from linebot.v3.webhooks import MessageEvent, TextMessageContent, PostbackEvent
 from linebot.v3.messaging import MessagingApi, ReplyMessageRequest, TextMessage
 from linebot.v3 import WebhookHandler
-from linebot.v3.messaging import ApiClient, Configuration, ShowLoadingAnimationRequest, FlexMessage
+from linebot.v3.messaging import ApiClient, Configuration, ShowLoadingAnimationRequest, FlexMessage,TextMessage, QuickReply, QuickReplyItem, DatetimePickerAction
 
 from config import CHANNEL_SECRET, CHANNEL_ACCESS_TOKEN
 from mongo import history_collection, summary_collection
@@ -14,7 +14,7 @@ from depression_scale import start_depression_test, handle_depression_response, 
 from emotion_strategy_utils import extract_emotion_from_reply, extract_strategies, extract_intentions
 from emotion_dashboard import generate_text_dashboard
 from gaming_disorder_scale import start_gaming_test, handle_gaming_response
-from gaming_disorder_scale import user_state as user_state1
+from gaming_disorder_scale import user_state as user_state1, get_history
 from extract_topic import extract_topic
 from vector_search import query_vectorstore
 from topic_manager import (
@@ -23,7 +23,7 @@ from topic_manager import (
     get_json,
     VALID_TOPICS
 )
-from weekly_summary import generate_weekly_summary
+from weekly_summary import generate_weekly_summary, get_summary_by_date
 
 from datetime import datetime
 import re
@@ -156,13 +156,56 @@ def handle_text(event):
                 )
             return
         
+        if user_input == "我要看遊戲成癮量表歷史":
+            bubble =  get_history(user_id, "gaming_disorder")
+
+            line_bot_api.reply_message(
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[bubble])   # 顯示遊戲成癮量表歷史
+            )
+            return 
+        
+        if user_input == "我要看憂鬱症量表歷史":
+            bubble =  get_history(user_id, "depression")
+        
+            line_bot_api.reply_message(
+                ReplyMessageRequest(reply_token=event.reply_token, messages=[bubble])   # 顯示憂鬱症量表歷史
+            )
+            return 
+        
         # === 查看最近摘要 ===
         if user_input == "我要看摘要":
             flex = generate_weekly_summary(user_id)
             line_bot_api.reply_message(
                 ReplyMessageRequest(reply_token=event.reply_token, messages=[flex])
+            )            
+
+            return
+        
+        # === 查詢摘要 ===
+        if user_input == "查詢摘要":
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[
+                        TextMessage(
+                            text="請選擇日期",
+                            quick_reply=QuickReply(
+                                items=[
+                                    QuickReplyItem(
+                                        action=DatetimePickerAction(
+                                            label="選擇日期",
+                                            data="chosen_date",
+                                            mode="date"  #  e.g. 2025-08-28
+                                        )
+                                    )
+                                ]
+                            )
+                        )
+                    ]
+                )
             )
             return
+    
         
         # === 檢查是否要設定主題 === 
         status, topic = check_and_set_topic(user_id, user_input)
@@ -259,3 +302,27 @@ def handle_text(event):
         line_bot_api.reply_message(
             ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
         )
+
+@handler.add(PostbackEvent)
+def handle_postback(event):     # 使用者用日期選擇器，查詢特定日子摘要
+    user_id = event.source.user_id
+
+    # 判斷是不是選日期的 postback
+    if event.postback.data == "chosen_date":
+        chosen_date = event.postback.params.get("date")
+        with ApiClient(configuration) as api_client:
+            line_bot_api = MessagingApi(api_client)
+            line_bot_api.show_loading_animation(  #延遲動畫
+                ShowLoadingAnimationRequest(
+                    chatId = user_id,
+                    loadingSeconds=10     # 動畫持續秒數
+                )
+            )
+            flex = get_summary_by_date(user_id, chosen_date)   # 查詢特定日子摘要
+
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[flex]
+                )
+            )

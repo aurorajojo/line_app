@@ -1,8 +1,11 @@
 # gaming_disorder_scale.py
 # ===== 處理網路遊戲成癮量表的執行 ===== 
 
+
 from linebot.v3.messaging import FlexMessage, FlexContainer
 import json
+from mongo import scale_collection
+from datetime import datetime, timedelta
 
 # IGDT-10 中文題目（共 10 題）
 questions = [
@@ -74,7 +77,9 @@ def make_result_bubble(total_score, result_text):
             "type": "box",
             "layout": "vertical",
             "contents": [
-                {"type": "button", "style": "primary", "action": {"type": "message", "label": "重新測驗", "text": "我要做遊戲成癮量表"}, "color": "#8D8684FF"}
+                {"type": "button", "style": "primary", "action": {"type": "message", "label": "重新測驗", "text": "我要做遊戲成癮量表"}, "color": "#8D8684FF"},
+                {"type": "separator", "margin": "sm" },
+                {"type": "button", "style": "primary", "action": {"type": "message", "label": "查看歷史", "text": "我要看遊戲成癮量表歷史"}, "color": "#8D8684FF"}
             ]
         }
     }
@@ -118,7 +123,17 @@ def handle_gaming_response(user_id, user_input):
     idx = user_state[user_id]["current_q"]
 
     if idx >= len(questions):     # 判斷是否完成量表
+                
         total_score = sum(user_state[user_id]["scores"])
+        
+        # 存到 MongoDB
+        scale_collection.insert_one({
+            "user_id": user_id,
+            "total_score": total_score,
+            "type": "gaming_disorder",
+            "timestamp": datetime.now()  + timedelta(hours=8)
+        })
+
         result_text = get_final_result(user_state[user_id]["scores"])  # 呼叫函式，判斷量表結果
         del user_state[user_id]
         return "end", make_result_bubble(total_score, result_text) # 回傳結果
@@ -140,7 +155,125 @@ def check_gaming_disorder(scores): # 遊戲結束，計算成績
 
 def get_final_result(scores):
     is_disordered = check_gaming_disorder(scores)
+   
+
+        
     if is_disordered:          # 有網路遊戲成癮
         return "你可能有網路遊戲成癮的傾向，建議與專業人員進一步討論。"
     else:                      # 沒有網路遊戲成癮
         return "你目前無明顯的網路遊戲成癮傾向，請持續保持良好的使用習慣。"
+
+def get_history(user_id, scale_type):
+    records = list(
+        scale_collection.find({"user_id": user_id, "type": scale_type})
+        .sort("timestamp", -1)
+        .limit(10)
+    )
+
+    if scale_type == "depression":
+        intro_bubble = {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "md",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": (
+                            "以下是您過去憂鬱症量表的分數紀錄\n"
+                        ),
+                        "wrap": True,
+                        "size": "md",
+                        "weight": "bold"
+                    },
+                    {
+                        "type": "separator",
+                        "margin": "sm"
+                    }, 
+                    {
+                        "type": "text",
+                        "text": (
+                            "分數範圍 0~54 分，分數越高，代表近期可能比較容易感到心情低落；"
+                            "分數越低，心情可能較穩定。慢慢看看，回顧最近的感受，也別忘了照顧自己～"
+                        ),
+                        "wrap": True,
+                        "size": "sm",
+                        "color": "#555555"
+                    }
+                ]
+            }
+        }
+
+    elif scale_type == "gaming_disorder":
+        intro_bubble = {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "md",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": (
+                            "以下是您過去遊戲成癮量表的分數紀錄\n"
+                        ),
+                        "wrap": True,
+                        "size": "md",
+                        "weight": "bold"
+                    },
+                    {
+                        "type": "separator",
+                        "margin": "sm"
+                    },       
+                    {
+                        "type": "text",
+                        "text": (
+                            "分數範圍 0~20 分，分數越高，表示近期玩遊戲的頻率或依賴感較高；"
+                            "分數越低，代表遊戲習慣可能較穩定。慢慢看看自己的趨勢，也記得給自己休息與調整的空間～"
+                        ),
+                        "wrap": True,
+                        "size": "sm"
+                    }
+                ]
+            }
+        }
+
+    bubbles = [intro_bubble] 
+
+    if not records:
+        bubble = {
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {"type": "text", "text": "尚無歷史紀錄", "weight": "bold", "size": "lg"}
+                ]
+            }
+        }
+        return FlexMessage(alt_text="量表歷史", contents=FlexContainer.from_json(json.dumps(bubble)))
+
+    for rec in records:
+        date_str = rec["timestamp"].strftime("%Y-%m-%d %H:%M")
+        bubbles.append({
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": [
+                    {"type": "text", "text": f"施測時間：{date_str}", "weight": "bold", "size": "md", "wrap": True},
+                    {"type": "text", "text": f"總分: {rec['total_score']}", "weight": "bold", "size": "md"}
+
+                ]
+            }
+        })
+
+    return FlexMessage(
+        alt_text="量表歷史紀錄",
+        contents=FlexContainer.from_json(json.dumps({"type": "carousel","contents": bubbles}))
+    )

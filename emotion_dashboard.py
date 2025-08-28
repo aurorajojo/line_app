@@ -95,7 +95,7 @@ def generate_text_dashboard(user_id):
         # === 建立單一情緒的 bubble 卡片 ===
         bubble = {
             "type": "bubble",
-            "size": "nano",  # 使用 nano 大小，適合多張卡片並列
+            "size": "deca",  # 使用 nano 大小，適合多張卡片並列
             "header": {
                 "type": "box",
                 "layout": "vertical",
@@ -115,16 +115,16 @@ def generate_text_dashboard(user_id):
                                 "contents": [{"type": "filler"}],  # 內部填充
                                 "width": f"{percent}%",  # 進度條長度
                                 "backgroundColor": bar_color,  # 進度條顏色
-                                "height": "6px"
+                                "height": "12px"
                             }
                         ],
                         "backgroundColor": "#FFFFFF4D",  # 外框背景
-                        "height": "6px",
+                        "height": "12px",
                         "margin": "sm"
                     }
                 ],
                 "backgroundColor": bg_color,  # 卡片上方背景色
-                "paddingAll": "12px"
+                "paddingAll": "24px"
             },
             "body": {
                 "type": "box",
@@ -134,11 +134,50 @@ def generate_text_dashboard(user_id):
                     {"type": "text", "text": emo, "color": "#8C8C8C", "size": "sm", "wrap": True}
                 ],
                 "spacing": "md",
-                "paddingAll": "12px"
+                "paddingAll": "24px"
             },
             "styles": {"footer": {"separator": False}}
         }
         bubbles.append(bubble)
+
+
+    intro_bubble = {
+        "type": "bubble",
+        "size": "deca",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": (
+                        "以下是您過去七天的情緒儀表板\n"
+                    ),
+                    "wrap": True,
+                    "size": "md",
+                    "weight": "bold"
+                },
+                {
+                    "type": "separator",
+                    "margin": "sm"
+                },
+                {
+                    "type": "text",
+                    "text": (
+                        "每張卡片代表一種情緒，顯示它在對話中出現的比例，而不是情緒強度。\n"
+                        "數字越高，表示這種情緒在最近七天出現得越頻繁。\n"
+                        "慢慢看看這些趨勢，回顧自己的心情，也別忘了給自己一些關心～"
+                    ),
+                    "wrap": True,
+                    "size": "sm",
+                    "color": "#555555"
+                }
+            ]
+        }
+    }
+
+    bubbles = [intro_bubble] + bubbles  # 將介紹 bubble 放在最前面
 
     # === 建立 carousel（多張情緒卡片組成） ===
     flex_json = {"type": "carousel", "contents": bubbles}

@@ -29,6 +29,57 @@ def generate_weekly_summary(user_id: str) -> FlexMessage:
     yesterday = today - timedelta(days=1)
     bubbles = []
 
+    # 額外增加一個 bubble：查詢摘要
+    query_bubble ={
+        "type": "bubble",
+        "size": "mega",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+            {
+                "type": "text",
+                "text": "以下是您過去七天的個別每日摘要，希望您能藉此回顧自己的心情與思緒，了解自己的狀態，也別忘了給自己一些關心或尋求協助。",
+                "wrap": True,
+                "weight": "bold",
+                "size": "lg",
+                "color": "#333333"
+            },
+            {
+                "type": "separator",
+                "margin": "md"
+            },
+            {
+                "type": "text",
+                "text": "如果想看更多摘要，點擊下方'查詢摘要'選擇要查詢摘要的日期",
+                "wrap": True,
+                "size": "sm",
+                "color": "#555555"
+            }
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": [
+            {
+                "type": "button",
+                "style": "primary",
+                "action": {
+                "type": "message",
+                "label": "查詢摘要",
+                "text": "查詢摘要"
+                },
+                "color": "#8D8684FF"
+            }
+            ]
+        }
+    }
+    
+    bubbles.append(query_bubble)  
+
     for i in range(7):
         day = yesterday - timedelta(days=i)
         date_str = day.strftime("%Y-%m-%d") + " " + get_weekday_chinese(day)
@@ -78,6 +129,7 @@ def generate_weekly_summary(user_id: str) -> FlexMessage:
             }
         }
         bubbles.append(bubble)
+  
 
     # Carousel 裝七個 bubble
     flex_content = {
@@ -89,3 +141,68 @@ def generate_weekly_summary(user_id: str) -> FlexMessage:
         altText="過去七天摘要",
         contents=FlexContainer.from_json(json.dumps(flex_content))  # 🚀 dict 轉成 FlexContainer
     )
+
+def get_summary_by_date(user_id: str, chosen_date: str) -> FlexMessage:
+    """
+    查詢指定日期的摘要並回傳 FlexMessage
+    chosen_date 格式: "YYYY-MM-DD"
+    """
+    try:
+        # 將字串轉 datetime
+        date_obj = datetime.strptime(chosen_date, "%Y-%m-%d")
+
+    except ValueError:
+        # 格式錯誤
+        return FlexMessage(
+            altText="日期格式錯誤",
+            contents={
+                "type": "bubble",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {"type": "text", "text": "日期格式錯誤，請選擇正確日期", "wrap": True, "color": "#FF0000"}
+                    ]
+                }
+            }
+        )
+
+    # 查詢 MongoDB
+    summary_doc = summary_collection.find_one(
+        {
+            "user_id": user_id,
+            "date": {
+                "$gte": date_obj.replace(hour=0, minute=0, second=0, microsecond=0),
+                "$lt": (date_obj + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+            }
+        }
+    )
+
+    if summary_doc and "summary" in summary_doc:
+        summary_text = summary_doc["summary"]
+        date_color = "#000000"
+    else:
+        summary_text = "尚無摘要"
+        date_color = "#888888"
+
+    date_str = date_obj.strftime("%Y-%m-%d") + " " + get_weekday_chinese(date_obj)
+    
+    # 建立 FlexMessage
+    bubble = {
+        "type": "bubble",
+        "size": "mega",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {"type": "text", "text": date_str, "weight": "bold", "size": "lg", "color": date_color},
+                {"type": "text", "text": summary_text, "wrap": True, "size": "sm", "margin": "md", "color": "#555555"}
+            ]
+        }
+    }
+
+    return FlexMessage(
+        altText=f"{chosen_date} 摘要",
+        contents=FlexContainer.from_json(json.dumps(bubble))
+    )
+

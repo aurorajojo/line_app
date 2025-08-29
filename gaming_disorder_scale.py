@@ -106,10 +106,19 @@ def handle_gaming_response(user_id, user_input):
         return "end",   FlexMessage(
                           alt_text="結束測驗",
                           contents=FlexContainer.from_json(json.dumps({
-                              "type": "bubble",
-                              "body": {"type": "box", "layout": "vertical", "contents":[
-                                  {"type": "text", "text": "測驗結束", "wrap": True}
-                              ]}
+                                "type": "bubble",
+                                "body": {"type": "box", "layout": "vertical", "contents":[
+                                    {"type": "text", "text": "測驗結束", "wrap": True}
+                                ]},
+                                "footer": {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {"type": "button", "style": "primary", "action": {"type": "message", "label": "重新測驗", "text": "我要做遊戲成癮量表"}, "color": "#8D8684FF"},
+                                        {"type": "separator", "margin": "sm" },
+                                        {"type": "button", "style": "primary", "action": {"type": "message", "label": "查看歷史", "text": "我要看遊戲成癮量表歷史"}, "color": "#8D8684FF"}
+                                    ]
+                                }
                           }))
                         )
 

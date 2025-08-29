@@ -19,13 +19,13 @@ flowchart TD
 
     C --> D{依序判斷使用者輸入類型}
 
-    D -->|1 情緒分析請求| E[生成情緒儀表板報告並回傳]
+    D -->|1 情緒分析請求| E[回傳情緒儀表板]
     E --> O1
 
-    D -->|2 開始憂鬱症量表測驗| F[回傳憂鬱症量表 FlexMessage 介面]
+    D -->|2 觀看摘要請求| F[回傳摘要]
     F --> O1
 
-    D -->|3 開始遊戲成癮量表測驗| G[回傳遊戲成癮量表 FlexMessage 介面]
+    D -->|3 開始量表測驗| G[回傳量表 FlexMessage 介面]
     G --> O1
 
     D -->|4 諮商輔導| I[呼叫api將文字轉成向量]
@@ -43,7 +43,7 @@ flowchart TD
     MDB_Read --> X
 
     X --> L[呼叫 Groq LLM API]
-    MDB_Read[( 讀取 MongoDB 歷史對話)]
+    MDB_Read[( 讀取 MongoDB 歷史對話最近5筆)]
     MDB_Write[( 寫入 MongoDB 此次對答、使用心理策略、使用者情緒、聊天主題、意圖、時間)]
 
 

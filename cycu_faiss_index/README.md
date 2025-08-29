@@ -20,7 +20,7 @@ vector_search.py 使用流程：
    呼叫我們自己架設的Hugging Face Space（[aurorajojo/e5-large-embedding-api](https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api)）將使用者 input 轉換為向量。
 
 2. **載入向量庫**  
-   透過 `FAISS.load_local()` 載入本地向量庫 （[cycu_faiss_index](https://github.com/aurorajojo/line_app/blob/main/cycu_faiss_index))。內容為中原大學各項資源的文字描述，包含藝文資源、學習資源、心理輔導、體育場館、餐飲、教官室等資訊。
+   透過 `FAISS.load_local()` 載入本地向量庫 ([cycu_faiss_index](https://github.com/aurorajojo/line_app/blob/main/cycu_faiss_index))。內容為中原大學各項資源的文字描述，包含藝文資源、學習資源、心理輔導、體育場館、餐飲、教官室等資訊。
 
 4. **向量距離比對**  
    `query_vectorstore()` 執行檢索並判斷距離閾值（預設 0.35）：  
@@ -34,7 +34,7 @@ vector_search.py 使用流程：
 |----------------------|------|
 | `index.faiss`        | FAISS 的主索引檔，儲存所有向量與索引結構 |
 | `index.pkl`          | 對應向量的原始文本與中繼資料（metadata）序列化檔 |
-| `cycu_resources.txt`          | 此索引資料來源，該檔案內容包含：<br> **藝文資源**（音樂廳、藝術中心等）<br> **學習資源**（圖書館、自學空間、討論室等）<br> **心理輔導資源**（諮商中心、心理治療所等）<br> **職涯發展**（職涯發展處、學用區等）<br> **體育設施**（游泳池、體育館、球場等）<br> **餐飲資源**（星巴克、路易莎、麥當勞等）<br> **教官室**（各系所教官與聯絡方式） |
+| `cycu_resources.txt`          | 此索引資料來源，該檔案內容包含：<br> **藝文資源**（音樂廳、藝術中心等）<br> **學習資源**（圖書館、自學空間、討論室等）<br> **心理輔導資源**（諮商中心、心理治療所等）<br> **職涯發展**（職涯發展處、學用區等）<br> **體育設施**（游泳池、體育館、球場等）<br> **餐飲資源**（星巴克、路易莎、麥當勞等）<br> **教官室**（各系所教官與聯絡方式）<br>**社團列表**<br>**工讀獎助**<br>**租屋資訊**<br>**意見反映**<br>**校園動物陪伴**<br>**霸凌、性平申訴管道** |
 
 ##  intfloat/multilingual-e5-large介紹
 

@@ -50,23 +50,6 @@ def handle_text(event):
             )
         )
 
-        # === 每日訊息限制 ===
-        start_of_day = (datetime.now()+ timedelta(hours=8)).replace(hour=0, minute=0, second=0, microsecond=0)
-        msg_count = history_collection.count_documents({
-            "user_id": user_id,
-            "timestamp": {"$gte": start_of_day},
-            "prompt": {"$ne": ""}   # 過濾掉選主題的紀錄
-        })
-
-        if msg_count >= 10:                       # 達到 10 則訊息的上限，輸出結束提醒 + 今日摘要
-            bubble = generate_summary(user_id)
-
-            line_bot_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,messages=[bubble]
-                )
-            )
-            return
             
         # === 防呆判斷：輸入 0,1,2,3 或 結束測驗，卻尚未開始量表 ===
         if user_input in ["0", "1", "2", "3", "結束測驗"]:
@@ -199,7 +182,24 @@ def handle_text(event):
                 )
             )
             return
-    
+
+        # === 每日訊息限制 ===
+        start_of_day = (datetime.now()+ timedelta(hours=8)).replace(hour=0, minute=0, second=0, microsecond=0)
+        msg_count = history_collection.count_documents({
+            "user_id": user_id,
+            "timestamp": {"$gte": start_of_day},
+            "prompt": {"$ne": ""}   # 過濾掉選主題的紀錄
+        })
+
+        if msg_count >= 10:                       # 達到 10 則訊息的上限，輸出結束提醒 + 今日摘要
+            bubble = generate_summary(user_id)
+
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,messages=[bubble]
+                )
+            )
+            return    
         
         # === 檢查是否要設定主題 === 
         status, topic = check_and_set_topic(user_id, user_input)

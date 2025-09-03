@@ -24,16 +24,11 @@ from topic_manager import (
     VALID_TOPICS
 )
 from weekly_summary import generate_weekly_summary, get_summary_by_date
+from daily_summary import summarize, generate_summary
 
 from datetime import datetime
 import re
 from datetime import datetime, timedelta
-
-# 白名單，訊息數量不受限制
-WHITELIST_USERS = {
-    "U5cfa3c6856002212a1a3efcf3598f565",
-    "U23db4a95096bb0d8162249bf11276b90"
-}
 
 # 設定 LINE Handler 與 Configuration
 handler = WebhookHandler(CHANNEL_SECRET)
@@ -56,23 +51,22 @@ def handle_text(event):
         )
 
         # === 每日訊息限制 ===
-        if user_id not in WHITELIST_USERS:
-            start_of_day = (datetime.now()+ timedelta(hours=8)).replace(hour=0, minute=0, second=0, microsecond=0)
-            msg_count = history_collection.count_documents({
-                "user_id": user_id,
-                "timestamp": {"$gte": start_of_day},
-                "prompt": {"$ne": ""}   # 過濾掉選主題的紀錄
-            })
+        start_of_day = (datetime.now()+ timedelta(hours=8)).replace(hour=0, minute=0, second=0, microsecond=0)
+        msg_count = history_collection.count_documents({
+            "user_id": user_id,
+            "timestamp": {"$gte": start_of_day},
+            "prompt": {"$ne": ""}   # 過濾掉選主題的紀錄
+        })
 
-            if msg_count >= 10:                            # 10 則訊息的上限
+        if msg_count >= 10:                       # 達到 10 則訊息的上限，輸出結束提醒 + 今日摘要
+            bubble = generate_summary(user_id)
 
-                line_bot_api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=event.reply_token,
-                        messages=[TextMessage(text="您今天已達到 10 則訊息的上限，請明天再來聊聊喔！")]
-                    )
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,messages=[bubble]
                 )
-                return
+            )
+            return
             
         # === 防呆判斷：輸入 0,1,2,3 或 結束測驗，卻尚未開始量表 ===
         if user_input in ["0", "1", "2", "3", "結束測驗"]:
@@ -302,6 +296,17 @@ def handle_text(event):
         line_bot_api.reply_message(
             ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
         )
+
+        # 計算呼叫幾次llm
+        start_of_day = (datetime.now()+ timedelta(hours=8)).replace(hour=0, minute=0, second=0, microsecond=0)
+        msg_count = history_collection.count_documents({
+            "user_id": user_id,
+            "timestamp": {"$gte": start_of_day},
+            "prompt": {"$ne": ""}   # 過濾掉選主題的紀錄
+        })      
+
+        if msg_count == 10:   #如果對話滿十筆，就做摘要
+            summarize(user_id)  
 
 @handler.add(PostbackEvent)
 def handle_postback(event):     # 使用者用日期選擇器，查詢特定日子摘要

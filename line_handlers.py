@@ -240,12 +240,8 @@ def handle_text(event):
                 )
             return
         
-        is_similar, content, score = query_vectorstore(user_input)
-
-        if is_similar:
-            content = base_prompt + f"以下是與您問題最相關的學校資源：\n{content}"
-        else:
-            content = base_prompt + f"以下是可參考的學校資源索引：{content}"
+        content = query_vectorstore(user_input, user_id )
+        content = base_prompt + content
 
 
         # === 查詢歷史對話，建立上下文 ===
@@ -290,7 +286,6 @@ def handle_text(event):
 
         # === 把(數字) [數字] {數字} ... 刪掉 === 
         reply = re.sub(r"[\(\[\{]\d+[\)\]\}]", "", reply).strip()
-
         
         # === 回覆使用者 ===
         line_bot_api.reply_message(

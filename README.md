@@ -26,19 +26,24 @@ flowchart TD
     D -->|4 諮商輔導| I[呼叫api將文字轉成向量]
 
     subgraph RAG
-        I --> V1[和FAISS 向量資料庫比對]
+        I --> V1[和中原資源向量資料比對]
+        I --> V2[和歷史摘要向量資料比對]
         V1 --> Q{向量距離 <= 0.35?}
-        Q -->|是| J[整合 Base Prompt 與向量資料庫相似內容]
-        Q -->|否| R[整合 Base Prompt 與中原資源索引內容]
+        V2 --> Q2{有命中?}
+        Q -->|是| J[加入中原資源內容]
+        Q -->|否| R[加入資源索引內容]
+        Q2 -->|是| S[加入個人摘要內容]
+        Q2 -->|否| T[不加入]
+        
     end
 
-    
+    S --> X
     J --> X[整合為最終Prompt]
     R --> X
     MDB_Read --> X
 
     X --> L[呼叫 Groq LLM API]
-    MDB_Read[( 讀取 MongoDB 歷史對話最近5筆)]
+    MDB_Read[( 讀取 MongoDB 歷史對話最近5筆、Base Prompt)]
     MDB_Write[( 寫入 MongoDB 此次對答、使用心理策略、使用者情緒、聊天主題、意圖、時間)]
 
 
@@ -46,7 +51,8 @@ flowchart TD
         
     
     MDB_Write --> O1
-    O1[透過 Messaging API 回覆使用者訊息] --> Z[流程完成]
+    O1[透過 Messaging API 回覆使用者訊息] --> M[若達今日對話上限，要做摘要]
+    M --> Z[流程完成]
 
 ```
 <br>

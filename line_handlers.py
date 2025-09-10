@@ -240,22 +240,23 @@ def handle_text(event):
                 )
             return
         
+        # === 可供參考的(資源+摘要+指令) or (索引+摘要+指令) ===
         content = query_vectorstore(user_input, user_id )
         content = base_prompt + content
-
-
-        # === 查詢歷史對話，建立上下文 ===
-        history = list(history_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(5))
-        history.reverse()  # 由舊至新
         messages = [{"role": "system", "content": content}]
 
    
-        # === 將歷史對話依序加入 messages，供 LLM 建立上下文 === 
-        for h in history:
-            if "user_input" in h:
-                messages.append({"role": "user", "content": f"【歷史】{h['user_input']}"})
-            if "reply" in h:
-                messages.append({"role": "assistant", "content": f"【歷史】{h['reply']}"})
+        # === 查詢歷史對話，建立上下文 ===
+        history = list(history_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(5))  # 5筆
+        history.reverse()  # 由舊至新
+        if history:
+            history_text = "【歷史】\n"
+            for h in history:
+                if "user_input" in h:
+                    history_text += f"user: {h['user_input']}\n"
+                if "reply" in h:
+                    history_text += f"system: {h['reply']}\n"
+            messages.append({"role": "user", "content": history_text.strip()})
 
         # === 最新使用者輸入也加入上下文末端 === 
         messages.append({"role": "user", "content": f"【本次】{user_input}"})
@@ -269,8 +270,8 @@ def handle_text(event):
         strategy_tags = extract_strategies(reply)                 # 找策略
         intention_tag = extract_intentions(reply)                 # 找意圖
         topic_tags = extract_topic(user_input, user_id)           # 找主題
-        reply = reply.replace("【本次】", "").strip()
-        reply = reply.replace("【歷史】", "").strip()
+        reply = reply.replace("【本次】", "").strip()              # 有時模型會亂加【本次】這個在最前面，要刪掉
+        reply = reply.replace("【歷史】", "").strip()              # 有時模型會亂加【歷史】這個在最前面，要刪掉
         
         history_collection.insert_one({
             "user_id": user_id,                                 # 使用者id
@@ -292,15 +293,15 @@ def handle_text(event):
             ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=reply)])
         )
 
-        # 計算呼叫幾次llm
+        # 計算呼叫幾次llm，如果對話滿十筆，就做摘要
         start_of_day = (datetime.now()+ timedelta(hours=8)).replace(hour=0, minute=0, second=0, microsecond=0)
         msg_count = history_collection.count_documents({
             "user_id": user_id,
             "timestamp": {"$gte": start_of_day},
             "prompt": {"$ne": ""}   # 過濾掉選主題的紀錄
         })      
-
-        if msg_count == 10:   #如果對話滿十筆，就做摘要
+        
+        if msg_count == 10: 
             summarize(user_id)  
 
 @handler.add(PostbackEvent)

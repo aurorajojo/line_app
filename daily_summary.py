@@ -1,20 +1,26 @@
 # daily_summary.py
 # 幫上次諮商那天做摘要，存到資料庫
 
+import re
+import json
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from pymongo import DESCENDING
-from mongo import history_collection, summary_collection
-from llm import generate_summary_with_llm  
-import json
 from linebot.v3.messaging import FlexMessage, FlexContainer
 
+from mongo import history_collection, summary_collection
+from llm import call_summary_llm  
+from resources import summary_prompt
+from vector_search import APIEmbeddings  # 🚀 從你現有的 vector_search.py 匯入
+embeddings = APIEmbeddings()
+
+# 回傳日期是星期幾
 def get_weekday_chinese(date: datetime) -> str:
     weekdays = ["(一)", "(二)", "(三)", "(四)", "(五)", "(六)", "(日)"]
     return weekdays[date.weekday()]  # weekday() 0=Monday
-    
+
+# 取得現在的台灣時間（直接 +8 小時，不帶 tzinfo）
 def now_taiwan() -> datetime:
-    """取得現在的台灣時間（直接 +8 小時，不帶 tzinfo）"""
     return datetime.now() + timedelta(hours=8)
 
 # 檢查上次對話是否需要做摘要
@@ -55,6 +61,7 @@ def check_and_summarize(user_id):
 
                 # 產生摘要（呼叫 LLM）
                 summary_text, messages = generate_summary_with_llm(summary_doc)
+                embedding = embeddings.embed_query(summary_text)
 
                 # 存進資料庫
                 summary_collection.insert_one({
@@ -62,7 +69,8 @@ def check_and_summarize(user_id):
                     "date":day_start,
                     "messages":messages,
                     "summary": summary_text,
-                    "created_at": now_taiwan()
+                    "created_at": now_taiwan(),
+                    "embedding": embedding
                 })
 
     else:
@@ -109,6 +117,7 @@ def summarize(user_id):
 
                 # 產生摘要（呼叫 LLM）
                 summary_text, messages = generate_summary_with_llm(summary_doc)
+                embedding = embeddings.embed_query(summary_text)
 
                 # 存進資料庫
                 summary_collection.insert_one({
@@ -116,7 +125,8 @@ def summarize(user_id):
                     "date": day_start,
                     "messages": messages,
                     "summary": summary_text,
-                    "created_at": now_taiwan()
+                    "created_at": now_taiwan(),
+                    "embedding": embedding
                 })
     else:
         print("尚無對話紀錄")
@@ -221,3 +231,34 @@ def generate_summary(user_id: str) -> FlexMessage:
         altText="最新摘要",
         contents=FlexContainer.from_json(json.dumps(flex_content))  # 🚀 dict 轉成 FlexContainer
     )
+
+def generate_summary_with_llm(chats):
+    """
+    將對話整理成 messages，呼叫 Groq API 生成摘要
+    """
+    messages = [{ "role": "system", "content": summary_prompt } ]
+
+    # 將使用者與 LLM 對話加入 messages
+    for c in chats:
+        if "user_input" in c:
+            messages.append({"role": "user", "content": f"{c['user_input']}"})
+        if "reply" in c:
+            cleaned_reply = re.sub(r"[\(\[\{]\d+[\)\]\}]", "", c["reply"]).strip()
+            messages.append({"role": "assistant", "content": cleaned_reply })
+
+    # 呼叫 Groq API
+    summary = call_summary_llm(messages)
+    summary = trim_before_summary(summary)
+    return summary, messages
+
+def trim_before_summary(text: str) -> str:
+    """
+    尋找「今日摘要」並刪掉它前面的所有文字
+    """
+    keyword = "今日摘要"
+    idx = text.find(keyword)
+    if idx != -1:
+        return text[idx:].strip()
+    else:
+        # 如果沒找到，就直接回傳原文
+        return text.strip()

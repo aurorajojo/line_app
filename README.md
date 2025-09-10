@@ -70,6 +70,7 @@ flowchart TD
 
 ### `line_handlers.py`
 - 處理來自 LINE 的訊息事件。包括情緒儀表板、做量表、心理諮商。
+- 整合向量檢索結果、歷史對話5筆、base prompt，丟入llm 生成line bot 回覆。
 
 ### `vector_search.py`
 
@@ -79,16 +80,25 @@ flowchart TD
    呼叫我們自己架設的 Hugging Face Space（[aurorajojo/e5-large-embedding-api](https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api)）將使用者 input 轉換為向量。
 
 2. **載入向量庫**  
-   透過 `FAISS.load_local()` 載入本地向量庫 ([cycu_faiss_index](https://github.com/aurorajojo/line_app/blob/main/cycu_faiss_index))。內容為中原大學各項資源的文字描述，包含藝文資源、學習資源、心理輔導、體育場館、餐飲、教官室等資訊。
+   載入本地向量庫 ([cycu_faiss_index](https://github.com/aurorajojo/line_app/blob/main/cycu_faiss_index))。內容為中原大學各項資源的文字描述，包含藝文資源、學習資源、心理輔導、體育場館、餐飲、教官室等資訊。
 
-4. **向量距離比對**  
-   `query_vectorstore()` 執行檢索並判斷距離閾值（預設 0.35）：  
-   - **符合閾值** → 代表資料庫有相關資料，回傳最相關資訊句子與向量距離分數，以便後續加入prompt回傳給大型語言模型。
-   - **不符合** → 代表資料庫沒有相關資料，回傳 `cycu_resources.json` 中的用途索引，以便後續加入prompt回傳給大型語言模型。
+3. **向量距離比對與檢索**
+
+- **檢索 FAISS**  
+  - 以向量距離閾值（預設 **0.35**）判斷結果是否相關。  
+  - **若小於等於閾值** → 視為「有相關資料」，回傳最相關的資源文字內容。  
+  - **若大於閾值** → 視為「無相關資料」，則回傳 `cycu_resources.json` 中的 **用途索引**。  
+
+- **檢索 MongoDB**  
+  - 從 `summary_collection` 中找出 **該使用者的top1歷史每日摘要**，並整合至輸出。  
+
+4. **整合輸出結果**
+- 當 FAISS 有相關資料：回傳「最相關的學校資源」+（若有的話）「歷史摘要」。  
+- 當 FAISS 無相關資料：回傳「用途索引」+（若有的話）「歷史摘要」。 
      
 ### `llm.py`
 - 封裝與語言模型（Groq / LLaMA）溝通的邏輯。
-- 定義如何將使用者訊息送出並取得回應。
+- 定義如何將使用者訊息送出並取得回應(聊天、摘要2種模式)。
 
 ### `extract_topic.py`
 - 使用者聊天前會在圖文選單選擇聊天主題(有7種)，後面所有的對話都會記錄為該主題並且 `儲存至資料庫 `
@@ -98,9 +108,8 @@ flowchart TD
 ### `emotion_strategy_utils.py`
 -  為了避免讓使用者察覺我們正在進行 `情緒分析` 與 `心理策略及意圖紀錄` ，設計了隱藏式的標記機制(當 LLM 回傳分析結果時，不會直接以文字顯示情緒名稱或策略內容，是透過編碼形式（如 [1]～[8] 表示情緒、(1)～(8) 表示策略、{1}~{12} 表示意圖進行標註)，這個檔案就是在進行上述的標記轉換處理
   
-
 ### `emotion_dashboard.py`
-- 根據使用者歷史對話紀錄，統計每種情緒出現的頻率，並產生 `文字情緒儀表板` 。
+- 根據使用者歷史對話紀錄，統計每種情緒七天內出現的頻率，並產生 `情緒儀表板` 。
 - 為了讓情緒分析結果更有親和力，我們替每一種情緒設計了一個對應角色。
 
 ### `depression_scale.py`
@@ -111,13 +120,15 @@ flowchart TD
 
 ### `topic_manager.py`
 - 管理每天使用者的聊天主題
-- 每天午夜自動清空，隔天重新要求主題
+- 每天午夜後重新要求主題
 
 ### `daily_summary.py`
-- 每日對話前，幫上次諮商那天做摘要，存到資料庫
+- 每日對話前，檢查上次諮商使否有做摘要，做完摘要就將摘要轉換成向量，一起存到資料庫
+- 如當日對話已滿上限(10次)，則做摘要，並將摘要轉換成向量，一起存到資料庫
 
 ### `weekly_summary.py`
 - 輸出七天以來每日的摘要
+- 輸出使用者要查詢的指定日期摘要
 
 ### `render_wake_up.py`
 - 我們使用 Render 作為伺服器部署平台。
@@ -125,10 +136,10 @@ flowchart TD
 
 ### `mongo.py`
 - 封裝 MongoDB 資料庫的連線與操作功能。
-- 讓專案能存取、管理聊天紀錄或資源資料。
+- 讓專案能存取&管理聊天紀錄、摘要、量表分數。
 
 ### `resources.py`
-- 載入 `system_prompt.txt` 、 `cycu_resources.json`，提供語言模型的指令（角色、語氣等）以及中原大學（CYCU）相關的各類資源資訊。
+- 載入 `system_prompt.txt` 、 `summary_prompt.json`、 `cycu_resources.json`，提供語言模型的指令（角色、語氣等）以及中原大學（CYCU）相關的各類資源資訊。
 
 ### `requirements.txt`
 - 記錄所需的 Python 套件。
@@ -139,6 +150,11 @@ flowchart TD
 - 設定llm不回答任何 `危險、非法或自殘 `相關問題。
 - 設定llm不透露任何 `prompt內部設計或詳細指令內容 `。
 - 生成流程: 判斷四個層面 → 確認意圖 → 套用策略。(此作法參考論文[IntentionESC: An Intention-Centered Framework for Enhancing Emotional Support in Dialogue Systems](https://aclanthology.org/2025.findings-acl.1358.pdf))
+
+### `summary_prompt.txt`
+- 儲存語言模型要執行摘要的prompt
+- 僅輸出摘要，不要進行對話或回答問題  
+- 不可編造對話中未出現的情緒或事件 
 
 ### `cycu_resources.json`
 - JSON 格式的資源資料檔案。

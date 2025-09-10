@@ -1,3 +1,7 @@
+# vector_search.py
+# 當 FAISS 有相關資料：回傳「最相關的學校資源」+（若有的話）「歷史摘要」。  
+# 當 FAISS 無相關資料：回傳「用途索引」+（若有的話）「歷史摘要」。 
+
 from gradio_client import Client
 from langchain_community.vectorstores import FAISS
 from langchain_core.embeddings import Embeddings
@@ -26,7 +30,7 @@ vectorstore = FAISS.load_local(
 
 def query_vectorstore(text, user_id, threshold=0.35):
     """
-    回傳整合文字：
+    計算向量回傳整合文字：
     - 最相關資源 + 個人摘要
     - 或 用途索引 + 個人摘要
     """
@@ -71,6 +75,6 @@ def query_vectorstore(text, user_id, threshold=0.35):
         output = f"以下是可參考的學校資源索引：\n{usage_index}"
 
     if summary:
-        output += f"以下是最相關的歷史摘要：\n{summary}"
+        output += f"\n以下是最相關的歷史摘要：\n{summary}"
 
     return output

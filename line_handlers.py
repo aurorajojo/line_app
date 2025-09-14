@@ -298,7 +298,7 @@ def handle_text(event):
         msg_count = history_collection.count_documents({
             "user_id": user_id,
             "timestamp": {"$gte": start_of_day},
-            "prompt": {"$ne": ""}   # 過濾掉選主題的紀錄
+            "prompt": {"$exists": True, "$ne": ""}  # 過濾掉選主題的紀錄
         })      
         
         if msg_count == 10: 

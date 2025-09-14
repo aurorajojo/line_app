@@ -1,6 +1,8 @@
 # extract_topic.py
 # ===== 聊天主題的設定 ===== 
 
+from mongo import history_collection
+
 """
 使用者聊天前會在圖文選單選擇聊天主題(有7種)
 所以後面所有的對話都會記錄為該主題並且儲存至資料庫
@@ -9,16 +11,17 @@
 如果資料庫為空，沒有歷史對話，就將主題先記錄為"其他"
 """
 
-from mongo import history_collection
-
 def extract_topic(user_input: str, user_id: str) -> str:
     VALID_TOPICS = [
-        "情緒困擾",
         "人際關係",
-        "課業壓力",
-        "生涯迷茫",
-        "校園適應",
-        "自我價值",
+        "家庭關係",
+        "情愛關係",
+        "生涯",
+        "課業學習",
+        "自我探索與認識",
+        "情緒困擾調適",
+        "精神疾病",
+        "性議題",
         "其他"
     ]
 

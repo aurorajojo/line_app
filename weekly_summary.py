@@ -1,9 +1,10 @@
 # weekly_summary.py
 from datetime import datetime, timedelta
 from daily_summary import check_and_summarize
-from mongo import summary_collection
+from mongo import summary_collection,history_collection
 import json
 from linebot.v3.messaging import FlexMessage, FlexContainer
+import re
 
 # 定義七個柔和七彩背景
 colors = [
@@ -94,6 +95,8 @@ def generate_weekly_summary(user_id: str) -> FlexMessage:
         )
         if summary_doc and "summary" in summary_doc:
             summary_text = summary_doc["summary"]
+            if not summary_text.strip():  # 判斷是空字串
+                summary_text = "對話太短，無法做出摘要"
             date_color = "#000000"  # 黑色（有資料）
             bg_color = colors[i % len(colors)]  # 循環使用七彩顏色
         else:
@@ -125,6 +128,25 @@ def generate_weekly_summary(user_id: str) -> FlexMessage:
                         "margin": "md",
                         "color": "#555555"
                     }
+              
+                ]
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": bg_color ,
+                "contents": [
+                {
+                    "type": "image",
+                    "url": "https://img.icons8.com/?size=100&id=26138&format=png&color=000000",
+                    "size": "xxs",
+                    "align": "end",
+                    "action": {
+                    "type": "message",
+                    "label": "看對話",
+                    "text": f"我要看{date_str}對話"
+                    }
+                }
                 ]
             }
         }
@@ -139,7 +161,7 @@ def generate_weekly_summary(user_id: str) -> FlexMessage:
 
     return FlexMessage(
         altText="過去七天摘要",
-        contents=FlexContainer.from_json(json.dumps(flex_content))  # 🚀 dict 轉成 FlexContainer
+        contents=FlexContainer.from_json(json.dumps(flex_content))  #  dict 轉成 FlexContainer
     )
 
 def get_summary_by_date(user_id: str, chosen_date: str) -> FlexMessage:
@@ -180,6 +202,8 @@ def get_summary_by_date(user_id: str, chosen_date: str) -> FlexMessage:
 
     if summary_doc and "summary" in summary_doc:
         summary_text = summary_doc["summary"]
+        if not summary_text.strip():  # 判斷是空字串
+            summary_text = "對話太短，無法做出摘要"
         date_color = "#000000"
     else:
         summary_text = "尚無摘要"
@@ -198,6 +222,23 @@ def get_summary_by_date(user_id: str, chosen_date: str) -> FlexMessage:
                 {"type": "text", "text": date_str, "weight": "bold", "size": "lg", "color": date_color},
                 {"type": "text", "text": summary_text, "wrap": True, "size": "sm", "margin": "md", "color": "#555555"}
             ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+            {
+                "type": "image",
+                "url": "https://img.icons8.com/?size=100&id=26138&format=png&color=000000",
+                "size": "xxs",
+                "align": "end",
+                "action": {
+                "type": "message",
+                "label": "看對話",
+                "text": f"我要看{date_str}對話"
+                }
+            }
+            ]
         }
     }
 
@@ -206,3 +247,238 @@ def get_summary_by_date(user_id: str, chosen_date: str) -> FlexMessage:
         contents=FlexContainer.from_json(json.dumps(bubble))
     )
 
+def get_daily_conversation_bubbles(user_id: str, date_str: str):
+    """
+    取得指定日期的完整對話，每組 user_input + reply 做成一個 bubble
+    """
+    date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+    start = date_obj.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=1)
+
+    history = list(history_collection.find({
+        "user_id": user_id,
+        "timestamp": {"$gte": start, "$lt": end}
+    }).sort("timestamp", 1))
+
+    if not history:
+        bubbles = [{
+                        "type": "bubble",
+                        "body": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {"type": "text", "text": f"{date_str} 沒有對話紀錄喔！", "wrap": True}
+                            ]
+                        }
+                    }]
+        flex_content = {
+            "type": "carousel",
+            "contents": bubbles
+        }
+        return  FlexMessage(
+                    altText=f"{date_str} 對話",
+                    contents=FlexContainer.from_json(json.dumps(flex_content))
+                )
+    
+    bubbles = []
+    for h in history:
+        user_msg = h.get("user_input", "")
+        bot_msg = h.get("reply", "")
+        bot_msg = re.sub(r"[\(\[\{]\d+[\)\]\}]", "", bot_msg).strip()
+
+        bubble = {
+            "type": "bubble",
+            "size": "mega",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                        {"type": "filler"},
+                        {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [],
+                            "cornerRadius": "30px",
+                            "height": "12px",
+                            "width": "12px",
+                            "borderColor": "#EF454D",
+                            "borderWidth": "2px"
+                        },
+                        {"type": "filler"}
+                        ],
+                        "flex": 0
+                    },
+                    {
+                        "type": "text",
+                        "gravity": "center",
+                        "flex": 4,
+                        "size": "sm",
+                        "text": "👤 你: " if user_msg else "👤 你："
+                    }
+                    ],
+                    "spacing": "lg",
+                    "cornerRadius": "30px",
+                    "margin": "xl"
+                },
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "contents": [
+                            {"type": "filler"},
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [],
+                                "width": "2px",
+                                "backgroundColor": "#B7B7B7"
+                            },
+                            {"type": "filler"}
+                            ],
+                            "flex": 1
+                        }
+                        ],
+                        "width": "12px"
+                    },
+                    {
+                        "type": "text",
+                        "text": f"{user_msg}",
+                        "wrap": True,
+                        "gravity": "center",
+                        "flex": 4,
+                        "size": "xs",
+                        "color": "#8c8c8c"
+                    }
+                    ],
+                    "spacing": "lg"
+                },
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                        {"type": "filler"},
+                        {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [],
+                            "cornerRadius": "30px",
+                            "width": "12px",
+                            "height": "12px",
+                            "borderWidth": "2px",
+                            "borderColor": "#6486E3"
+                        },
+                        {"type": "filler"}
+                        ],
+                        "flex": 0
+                    },
+                    {
+                        "type": "text",
+                        "text": "🤖 諮商師: " if bot_msg else "🤖 諮商師：",
+                        "gravity": "center",
+                        "flex": 4,
+                        "size": "sm"
+                    }
+                    ],
+                    "spacing": "lg",
+                    "cornerRadius": "30px"
+                },
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "contents": [
+                            {"type": "filler"},
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [],
+                                "width": "2px",
+                                "backgroundColor": "#6486E3"
+                            },
+                            {"type": "filler"}
+                            ],
+                            "flex": 1
+                        }
+                        ],
+                        "width": "12px"
+                    },
+                    {
+                        "type": "text",
+                        "text": f"{bot_msg}",
+                        "gravity": "center",
+                        "wrap": True,
+                        "flex": 4,
+                        "size": "xs",
+                        "color": "#8c8c8c"
+                    }
+                    ],
+                    "spacing": "lg"
+                },
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                        {"type": "filler"},
+                        {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [],
+                            "cornerRadius": "30px",
+                            "width": "12px",
+                            "height": "12px",
+                            "borderColor": "#6486E3",
+                            "borderWidth": "2px"
+                        },
+                        {"type": "filler"}
+                        ],
+                        "flex": 0
+                    }
+                    ],
+                    "spacing": "lg",
+                    "cornerRadius": "30px"
+                }
+                ]
+            }
+        }
+
+        bubbles.append(bubble)
+
+    bubbles = {
+        "type": "carousel",
+        "contents": bubbles
+    }
+
+    return FlexMessage(
+        altText=f"{date_str} 對話",
+        contents=FlexContainer.from_json(json.dumps(bubbles))
+    )

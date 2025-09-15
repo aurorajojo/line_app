@@ -23,7 +23,7 @@ from topic_manager import (
     get_json,
     VALID_TOPICS
 )
-from weekly_summary import generate_weekly_summary, get_summary_by_date
+from weekly_summary import generate_weekly_summary, get_summary_by_date,get_daily_conversation_bubbles
 from daily_summary import summarize, generate_summary
 
 from datetime import datetime
@@ -50,7 +50,19 @@ def handle_text(event):
             )
         )
 
-            
+        # === 查看指定日期的完整對話 ===
+        match = re.match(r"我要看(\d{4}-\d{2}-\d{2})\s*\(.+\)\s*對話", user_input)
+        if match:
+            chosen_date = match.group(1)
+            bubbles = get_daily_conversation_bubbles(user_id, chosen_date)
+
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token, messages=[bubbles]
+                )
+            )
+            return          
+          
         # === 防呆判斷：輸入 0,1,2,3 或 結束測驗，卻尚未開始量表 ===
         if user_input in ["0", "1", "2", "3", "結束測驗"]:
             if user_id not in user_state and user_id not in user_state1:

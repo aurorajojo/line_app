@@ -30,7 +30,7 @@ def call_groq_llm(messages, model="llama-3.3-70b-versatile"):
     else:                                                            # 其他的報錯
         return f"⚠️ Groq API 錯誤：{response.status_code}"# 封裝摘要 API
     
-def call_summary_llm(messages, model="llama-3.3-70b-versatile"):
+def call_summary_llm(messages, model="openai/gpt-oss-120b"):
     headers = {
         "Authorization": f"Bearer {SUMMARY_API_KEY}",
         "Content-Type": "application/json"

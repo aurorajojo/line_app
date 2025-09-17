@@ -23,5 +23,5 @@ MONGODB_URI = os.getenv("MONGODB_URI", "")
 
 # 資源檔案路徑
 PROMPT_FILE = os.path.join(BASE_DIR, 'data', 'system_prompt.txt')
-SUM_PROMPT = os.path.join(BASE_DIR, 'data', 'SUMMARY_prompt.txt')
+SUM_PROMPT = os.path.join(BASE_DIR, 'data', 'summary_prompt.txt')
 RESOURCE_FILE = os.path.join(BASE_DIR, 'data', 'cycu_resources.json')

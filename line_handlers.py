@@ -25,6 +25,7 @@ from topic_manager import (
 )
 from weekly_summary import generate_weekly_summary, get_summary_by_date,get_daily_conversation_bubbles
 from daily_summary import summarize, generate_summary
+from event_utils import load_upcoming_events, events_to_flex
 
 from datetime import datetime
 import re
@@ -50,6 +51,26 @@ def handle_text(event):
             )
         )
 
+        # === 查詢活動 ===
+        if user_input == "我要找活動":
+            events = load_upcoming_events()
+            if not events:
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text="目前沒有即將到來的活動喔～")]
+                    )
+                )
+            else:
+                flex = events_to_flex(events)
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[flex]
+                    )
+                )
+            return
+        
         # === 查看指定日期的完整對話 ===
         match = re.match(r"我要看(\d{4}-\d{2}-\d{2})\s*\(.+\)\s*對話", user_input)
         if match:

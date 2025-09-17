@@ -22,8 +22,7 @@ NUMBER_TO_EMOTION = {
     "9": "驚訝",
     "10": "興奮",
     "11": "冷靜",
-    "12": "其他",
-    "13": "無法判斷"
+    "12": "無法判斷"
 }
 
 strategy_map = {
@@ -60,7 +59,7 @@ def extract_emotion_from_reply(reply_text):
     以及數字代號1-8
     找不到則回傳 '無法判斷'
     """
-    pattern = r"\[([12345678]|焦慮|悲傷|憤怒|恐懼|厭惡|羞愧|其他|無法判斷)\]"
+    pattern = r"\[([12345678]|焦慮|悲傷|憤怒|恐懼|厭惡|羞愧|快樂|滿足|驚訝|興奮|冷靜|無法判斷)\]"
     match = re.search(pattern, reply_text)
     if match:
         val = match.group(1)

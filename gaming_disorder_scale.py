@@ -165,7 +165,6 @@ def check_gaming_disorder(scores): # 遊戲結束，計算成績
 def get_final_result(scores):
     is_disordered = check_gaming_disorder(scores)
    
-
         
     if is_disordered:          # 有網路遊戲成癮
         return "你可能有網路遊戲成癮的傾向，建議與專業人員進一步討論。"
@@ -275,6 +274,8 @@ def get_history(user_id, scale_type):
                 "layout": "vertical",
                 "spacing": "sm",
                 "contents": [
+                    {"type": "image","url": "https://img.icons8.com/?size=100&id=mDMf4QY53cql&format=png&color=000000","size": "xxs"},
+                    {"type": "separator"},
                     {"type": "text", "text": f"施測時間：{date_str}", "weight": "bold", "size": "md", "wrap": True},
                     {"type": "text", "text": f"總分: {rec['total_score']}", "weight": "bold", "size": "md"}
 

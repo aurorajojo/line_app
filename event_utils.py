@@ -18,7 +18,7 @@ def load_upcoming_events():
     for e in events:
         try:
             dt = datetime.strptime(e["date"], "%Y-%m-%d")
-            if dt >= now:  # 還沒過期
+            if dt > now:  # 還沒過期
                 upcoming.append(e)
         except Exception as ex:
             print(f"日期格式錯誤 {e}: {ex}")

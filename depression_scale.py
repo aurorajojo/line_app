@@ -1,21 +1,45 @@
 # depression_scale.py
-# ===== 處理憂鬱症量表的執行 ===== 
+# ===== 處理董氏憂鬱量表-大專生版的執行 ===== 
 
 from linebot.v3.messaging import FlexMessage, FlexContainer
 import json
 from mongo import scale_collection
 from datetime import datetime, timedelta
 
-# 台灣人憂鬱症量表題目，共18題
+# 憂鬱情緒量表題目，共32題
 questions = [
-    "我常常覺得想哭", "我覺得心情不好", "我覺得比以前容易發脾氣", "我睡不好",
-    "我覺得不想吃東西", "我覺得胸口悶悶的 (心肝頭或胸坎綁綁)",
-    "我覺得不輕鬆、不舒服 (不爽快)", "我覺得身體疲勞虛弱、無力 (身體很虛、沒力氣、元氣及體力)",
-    "我覺得很煩", "我覺得記憶力不好", "我覺得做事時無法專心",
-    "我覺得想事情或做事時，比平常要緩慢", "我覺得比以前較沒信心",
-    "我覺得比較會往壞處想", "我覺得想不開、甚至想死",
-    "我覺得對什麼事都失去興趣", "我覺得身體不舒服 (如頭痛、頭暈、心悸或肚子不舒服…等)",
-    "我覺得自己很沒用"
+    "我覺得心裡很難過。",
+    "碰到事情，我只想逃避。",
+    "我最近有自殺的念頭。",
+    "我心裡覺得很空虛。",
+    "沒有人瞭解我。",
+    "我感到絕望。",
+    "我覺得人生是灰暗的。",
+    "我對原本喜歡的事，變得沒興趣了。",
+    "我的胸口會緊緊、悶悶的。",
+    "我在掩飾心裡的痛苦。",
+    "我變得討厭自己。",
+    "我是別人的負擔。",
+    "我覺得很煩。",
+    "我上課唸書不能專心。",
+    "我感到昏昏沈沈的。",
+    "我覺得自己沒有未來。",
+    "我認為自己做人失敗。",
+    "我會莫名地想哭。",
+    "我覺得日子痛苦難熬。",
+    "我不想出門。",
+    "我覺得生活沒有意義。",
+    "我感到很寂寞。",
+    "我對任何事都提不起勁。",
+    "我覺得記憶力變差了。",
+    "我會猶豫不決，很難做決定。",
+    "我覺得自己是沒有價值的人。",
+    "沒有人關心我。",
+    "我不快樂。",
+    "我會想要傷害自己。",
+    "我會一直發呆。",
+    "我不想和別人交談。",
+    "我想自己躲起來。"
 ]
 
 # 用戶答題暫存
@@ -30,7 +54,7 @@ def make_question_bubble(question_text, q_number):
             "layout": "vertical",
             "spacing": "sm",
             "contents": [
-                {"type": "text", "text": "台灣人憂鬱症量表", "wrap": True, "weight": "bold", "size": "xl"},
+                {"type": "text", "text": "董氏憂鬱量表-大專生版", "wrap": True, "weight": "bold", "size": "xl"},
                 {"type": "text", "text": f"Q:{question_text}", "margin": "none", "size": "lg", "wrap": True}
             ]
         },
@@ -45,11 +69,12 @@ def make_question_bubble(question_text, q_number):
                 {"type": "button", "style": "primary", "action": {"type": "message", "label": "常常或總是 每周: 5～7天", "text": "3"}, "color": "#8D8684FF"},
                 {"type": "separator"},
                 {"type": "button", "action": {"type": "message", "label": "結束測驗", "text": "結束測驗"}, "color": "#000000FF"},
-                {"type": "text", "text": f"第{q_number}題，共18題", "align": "end"}
+                {"type": "button","action": {"type": "uri","label": "🔗題目出處：董氏基金會","uri": "https://www.etmh.org/Online_tool/detection2_form"},"color": "#000000FF"},
+                {"type": "text", "text": f"第{q_number}題，共32題", "align": "end"}
             ]
         }
     }
-    return FlexMessage(alt_text=f"台灣人憂鬱症量表 - 第{q_number}題",
+    return FlexMessage(alt_text=f"董氏憂鬱量表-大專生版 - 第{q_number}題",
                        contents=FlexContainer.from_json(json.dumps(bubble_json)))
 
 # 開始測驗，初始化使用者狀態
@@ -81,9 +106,9 @@ def handle_depression_response(user_id, user_input):
                                     "type": "box",
                                     "layout": "vertical",
                                     "contents": [
-                                        {"type": "button", "style": "primary", "action": {"type": "message", "label": "重新測驗", "text": "我要做遊戲成癮量表"}, "color": "#8D8684FF"},
+                                        {"type": "button", "style": "primary", "action": {"type": "message", "label": "重新測驗", "text": "我要做憂鬱症量表"}, "color": "#8D8684FF"},
                                         {"type": "separator", "margin": "sm" },
-                                        {"type": "button", "style": "primary", "action": {"type": "message", "label": "查看歷史", "text": "我要看遊戲成癮量表歷史"}, "color": "#8D8684FF"}
+                                        {"type": "button", "style": "primary", "action": {"type": "message", "label": "查看歷史", "text": "我要看憂鬱症量表歷史"}, "color": "#8D8684FF"}
                                     ]
                                 }
                             }))
@@ -113,16 +138,14 @@ def handle_depression_response(user_id, user_input):
 
         del user_state[user_id]
 
-        if total_score <= 8:
-            feedback = "真令人羨慕/你目前的情緒狀態很穩定，是個懂得適時調整情緒及紓解壓力的人，繼續保持下去。"
-        elif total_score <= 14:
-            feedback = "最近的情緒是否起伏下定?給自已多點關心，多注意情緒的變化，做適時的處理，比較不會陷入憂鬱情緒。"
-        elif total_score <= 18:
-            feedback = "你是不是有許多事壓在心上，肩上總覺得很沉重?千萬別再「撐」了!趕快找個有相同經驗的朋友聊聊，給心找個出口。"
-        elif total_score <= 28:
-            feedback = "現在的你必定無法展露笑容，一肚子苦惱及煩悶，趕緊找專業機構或醫療單位協助。"
+        if total_score <= 28:
+            feedback = "你現在的情緒大致穩定，沒有明顯的憂鬱情緒，通常可以處理生活上的壓力，建議你繼續保持良好的心情。"
+        elif total_score <= 35:
+            feedback = "最近是否經歷了一些挫折或有不愉快的經驗？仔細回想，情緒的變化及變化的緣由，試著把問題及感受向自己信任的人(例如朋友、父母或師長)說出來，一起討論處理的方法。他們的經驗和支持會帶給你不同的想法！保持良好的生活習慣，讓自己有活力！或是和朋友一起做些愉快放鬆的事。"
+        elif total_score <= 51:
+            feedback = "是不是已經持續一陣子(超過二星期)情緒低落、悶悶的、不想和別人交談？你的憂鬱程度已經蠻高了，一肚子苦惱與煩悶，連朋友也不知該如何幫你，可以與輔導老師、心理師或醫師聊聊，進一步瞭解自己是否需要專業的協助。"
         else:
-            feedback = "你是不是會不由自主的沮喪、難過，無法掙脫?因為你的心已「感冒」，心病需要心藥醫，緊到醫院找專業及可信賴的醫檢查，透過他們的診療，你將不再覺得孤單、無助!"
+            feedback = "你的心情持續低落？愁眉不展？只想一個人獨處？變得什麼都不想做？甚至對未來覺得無助或絕望？你的心已經感冒，心病需要心藥醫，趕緊到醫院找專業及可信賴的醫生檢查，透過他們的診斷與治療，你將不再覺得孤單、無助！"
 
         return "end", make_feedback_bubble(total_score, feedback)
     
@@ -138,7 +161,7 @@ def make_feedback_bubble(total_score, feedback):
         "body": {
             "type": "box", "layout": "vertical", "spacing": "md",
             "contents": [
-                {"type": "text", "text": "憂鬱症量表結果", "weight": "bold", "size": "xl", "color": "#333333"},
+                {"type": "text", "text": "董氏憂鬱量表-大專生版結果", "wrap": True, "weight": "bold", "size": "xl", "color": "#333333"},
                 {"type": "text", "text": f"你的總分是 {total_score} 分", "size": "lg", "color": "#000000"},
                 {"type": "separator", "margin": "md"},
                 {"type": "text", "text": feedback, "wrap": True, "size": "md", "color": "#555555", "margin": "md"}
@@ -150,11 +173,12 @@ def make_feedback_bubble(total_score, feedback):
                 {"type": "button", "style": "primary", "action": {"type": "message", "label": "重新測驗", "text": "我要做憂鬱症量表"}, "color": "#8D8684FF"},
                 {"type": "separator", "margin": "sm" },
                 {"type": "button", "style": "primary", "action": {"type": "message", "label": "查看歷史", "text": "我要看憂鬱症量表歷史"}, "color": "#8D8684FF"}
+
             ]
         }
     }
 
     return FlexMessage(
-        alt_text="憂鬱症量表結果",
+        alt_text="董氏憂鬱量表-大專生版結果",
         contents=FlexContainer.from_json(json.dumps(bubble_json))
     )

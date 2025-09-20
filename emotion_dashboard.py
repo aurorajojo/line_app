@@ -91,8 +91,8 @@ def generate_text_dashboard(user_id):
             }))
         )
 
-    # === 只取出現次數前七大的情緒 ===
-    sorted_emotions = emotion_counter.most_common(7)
+    # === 只取出現次數前12大的情緒 ===
+    sorted_emotions = emotion_counter.most_common(12)
     total = sum(emotion_counter.values())  # 總情緒數量（計算比例用）
 
     bubbles = []  # 儲存每個情緒的 bubble

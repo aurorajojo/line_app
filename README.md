@@ -80,24 +80,23 @@ flowchart TD
 負責向量檢索與向量距離判斷，流程如下：
 
 1. **向量化**  
-   呼叫我們自己架設的 Hugging Face Space（[aurorajojo/e5-large-embedding-api](https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api)）將使用者 input 轉換為向量。
+-呼叫我們自己架設的 Hugging Face Space（[aurorajojo/e5-large-embedding-api](https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api)）將使用者 input 轉換為向量。
 
 2. **載入FAISS向量庫**  
-   載入本地向量庫 ([cycu_faiss_index](https://github.com/aurorajojo/line_app/blob/main/cycu_faiss_index))。內容為中原大學各項資源的文字描述，包含藝文資源、學習資源、心理輔導、體育場館、餐飲、教官室等資訊。
+-載入本地向量庫 ([cycu_faiss_index](https://github.com/aurorajojo/line_app/blob/main/cycu_faiss_index))。內容為中原大學各項資源的文字描述，包含藝文資源、學習資源、心理輔導、體育場館、餐飲、教官室等資訊。
 
-3. **向量距離比對與檢索**
+3. **和使用者 input 向量距離比對與檢索**
 
-- **檢索 FAISS向量庫**  
+- **FAISS向量庫**  
   - 以向量距離閾值（預設 **0.35**）判斷結果是否相關。  
-  - **若小於等於閾值** → 視為「有相關資料」，回傳最相關的資源文字內容。  
-  - **若大於閾值** → 視為「無相關資料」，則回傳 `cycu_resources.json` 中的 **用途索引**。  
+  - **若小於等於閾值** → 視為「有相關資料」，取最相關的資源文字內容。  
+  - **若大於閾值** → 視為「無相關資料」，取 `cycu_resources.json` 中的 **用途索引**。  
 
-- **檢索 MongoDB**  
-  - 從 `summary_collection` 中找出 **該使用者的top1歷史每日摘要**，並整合至輸出。  
+- **每日摘要**  
+  - 從 `summary_collection` 中取出 **該使用者的top1相近歷史每日摘要**。  
 
-4. **整合輸出結果**
-- 當 FAISS 有相關資料：回傳「最相關的學校資源」+（若有的話）「歷史摘要」。 
-- 當 FAISS 無相關資料：回傳「用途索引」+（若有的話）「歷史摘要」。
+4. **整合兩項檢索結果**
+- 回傳`「最相關的學校資源」+（若有的話）「歷史摘要」`或`回傳「用途索引」+（若有的話）「歷史摘要」`。
      
 ### `llm.py`
 - 封裝與語言模型（Groq / LLaMA）溝通的邏輯
@@ -117,7 +116,7 @@ flowchart TD
 - 我們採用的情緒種類有: 1.焦慮 2.悲傷 3.憤怒 4.恐懼 5.厭惡 6.羞愧 7.快樂 8.滿足 9.驚訝 10.興奮 11.冷靜 12.無法判斷
 
 ### `depression_scale.py`
-- 顯示 18 題 `台灣人憂鬱症量表問題` ，讓使用者逐題作答
+- 顯示 32 題 `董氏憂鬱量表-大專生版問題` ，讓使用者逐題作答
 
 ### `gaming_disorder_scale.py`
 - 顯示 10 題 `網路遊戲成癮量表問題` ，讓使用者逐題作答
@@ -127,15 +126,15 @@ flowchart TD
 - 每天對話前會要求選主題
 
 ### `daily_summary.py`
-- 每日對話前，檢查上次諮商是否有做摘要，做完摘要就將摘要轉換成向量，一起存到資料庫
-- 如當日對話已滿上限(10次)，則做摘要，並將摘要轉換成向量，一起存到資料庫
+- 每日對話前，檢查上次諮商是否有做摘要，呼叫llm做完摘要就將摘要轉換成向量，一起存到資料庫
+- 如當日對話已滿上限(10次)，則呼叫llm做摘要，並將摘要轉換成向量，一起存到資料庫
 
 ### `weekly_summary.py`
 - 輸出本周(七天以來)每日的摘要
 - 輸出使用者要查詢的指定日期摘要
 
 ### `event_utils.py`
-- 回傳最近五個藝文活動資訊(名稱、日期、時間、連結)
+- 回傳最近10個即將到來的藝文活動相關資訊(包括名稱、日期、時間、連結)
 
 ### `render_wake_up.py`
 - 我們使用 Render 作為伺服器部署平台

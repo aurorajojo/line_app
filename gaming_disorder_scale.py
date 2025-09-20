@@ -47,6 +47,7 @@ def make_question_bubble(question_text, q_number):
                 {"type": "button", "style": "primary", "action": {"type": "message", "label": "經常", "text": "2"}, "color": "#8D8684FF"},
                 {"type": "separator"},
                 {"type": "button", "action": {"type": "message", "label": "結束測驗", "text": "結束測驗"}, "color": "#000000FF"},
+                {"type": "button","action": {"type": "uri","label": "🔗題目出處：網路內容防護機構","uri": "https://i.win.org.tw/addiction-intro.php"},"color": "#000000FF"},
                 {"type": "text", "text": f"第{q_number}題，共10題", "align": "end"}
             ]
         }

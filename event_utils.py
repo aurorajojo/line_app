@@ -1,17 +1,14 @@
+# event_utils.py
+# - 回傳最近10個藝文活動資訊(名稱、日期、時間、連結)
+
 import json
 from datetime import datetime, timedelta
 import json
 from linebot.v3.messaging import FlexMessage, FlexContainer
-from config import EVENTS_FILE
+from resources import events
 
 def load_upcoming_events():
 
-    with open(EVENTS_FILE, "r", encoding="utf-8") as f:
-        try:
-            events = json.load(f)
-        except Exception as e:
-            print(f"讀取 events.json 失敗: {e}")
-            return []
 
     now = datetime.now() + timedelta(hours=8)  # 台灣時間
     upcoming = []
@@ -24,9 +21,9 @@ def load_upcoming_events():
             print(f"日期格式錯誤 {e}: {ex}")
             continue
 
-    # 依日期排序 & 取最近五個
+    # 依日期排序 & 取最近10個
     upcoming.sort(key=lambda x: x["date"])
-    return upcoming[:5]
+    return upcoming[:10]
 
 
 def events_to_flex(events):

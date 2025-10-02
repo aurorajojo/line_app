@@ -21,7 +21,6 @@ EMOTION_CHARACTERS = {
     "恐懼": "🦔 小刺蝟皮皮",
     "厭惡": "🐸 青蛙嘔嘔",
     "羞愧": "🦊 小狐狸羞羞",
-    "快樂": "🐰 小兔子樂樂",
     "滿足": "🐼 圓滾熊熊",
     "驚訝": "🐿️ 小松鼠驚驚",
     "興奮": "🐶 狗狗蹦蹦",
@@ -37,7 +36,6 @@ EMOTION_COLORS = {
     "恐懼": ("#90a4ae", "#546e7a"),   # 灰色系
     "厭惡": ("#aed581", "#689f38"),   # 綠色系
     "羞愧": ("#f28d52", "#ef6c00"),   # 橘色系
-    "快樂": ("#ffa8f0", "#f06292"),   # 粉紅系
     "滿足": ("#413e3e", "#212121"),   # 黑灰系
     "驚訝": ("#fec269", "#f9a825"),   # 黃色系
     "興奮": ("#be6c0e", "#e65100"),   # 深橘系
@@ -92,7 +90,7 @@ def generate_text_dashboard(user_id):
         )
 
     # === 只取出現次數前12大的情緒 ===
-    sorted_emotions = emotion_counter.most_common(12)
+    sorted_emotions = emotion_counter.most_common(11)
     total = sum(emotion_counter.values())  # 總情緒數量（計算比例用）
 
     bubbles = []  # 儲存每個情緒的 bubble

@@ -4,11 +4,4 @@ requests
 pymongo
 certifi
 gunicorn
-langchain
-langchain-community
-langchain-huggingface
-torch
-transformers
-faiss-cpu
-sentence-transformers
 gradio_client

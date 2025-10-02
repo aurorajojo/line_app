@@ -36,7 +36,7 @@ def query_vectorstore(text, user_id, threshold=0.35):
 
     for res_name in cycu_resources.get("中原大學資源", {}):
         # 忽略大小寫模糊比對（substring match）
-        if re.search(re.escape(res_name.lower()), text_lower):
+        if res_name.lower() in text_lower:
             matched_resource = res_name
             break
 

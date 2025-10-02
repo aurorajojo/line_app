@@ -11,51 +11,29 @@
 
 ```mermaid
 flowchart TD
-    A[使用者透過 LINE 傳送文字訊息] --> D{依序判斷使用者輸入類型}
+    A[使用者透過 LINE 傳送文字訊息] --> D{判斷使用者輸入類型}
+
+    D -->|1 情緒分析請求| E[回傳情緒儀表板] --> O1
+    D -->|2 觀看摘要請求| F[回傳摘要] --> O1
+    D -->|3 開始量表測驗| G[回傳量表作答介面] --> O1
+    D -->|4 找活動| H[回傳五個最近的活動] --> O1
+    D -->|5 諮商輔導| I[資源查找和摘要查找]
 
 
-    D -->|1 情緒分析請求| E[回傳情緒儀表板]
-    E --> O1
+    I --> J1{使用者訊息有命中中原資源?}
+    J1 -->|是| J2[回傳中原資源資訊]
+    J1 -->|否| R[回傳用途索引]
 
-    D -->|2 觀看摘要請求| F[回傳摘要]
-    F --> O1
-
-    D -->|3 開始量表測驗| G[回傳量表作答介面]
-    G --> O1
-
-    D -->|4 找活動| H[回傳五個最近的活動]
-    H --> O1
-
-    D -->|5 諮商輔導| I[呼叫api將文字轉成向量]
-
-    subgraph RAG
-        I --> V1[和中原資源向量資料比對]
-        I --> V2[和歷史摘要向量資料比對]
-        V1 --> Q{向量距離 <= 0.35?}
-        V2 --> Q2{有命中?}
-        Q -->|是| J[加入中原資源內容]
-        Q -->|否| R[加入資源索引內容]
-        Q2 -->|是| S[加入個人摘要內容]
-        Q2 -->|否| T[不加入]
-        
-    end
-
-    S --> X
-    J --> X[整合為最終Prompt]
-    R --> X
-    MDB_Read --> X
-
-    X --> L[呼叫 Groq LLM API]
-    MDB_Read[( 讀取 MongoDB 歷史對話最近5筆、Base Prompt)]
-    MDB_Write[( 寫入 MongoDB 此次對答、使用心理策略、使用者情緒、聊天主題、意圖、時間)]
+    I --> V2[查歷史摘要向量資料]
+    V2 --> Q2{摘要命中?}
+    Q2 -->|是| S[加入個人摘要內容Top2]
+    Q2 -->|否| T[不加入]
 
 
-    L --> MDB_Write
-        
-    
-    MDB_Write --> O1
-    O1[透過 Messaging API 回覆使用者訊息] --> M[若達今日對話上限，要做摘要]
-    M --> Z[流程完成]
+    J2 & R & S & T --> X[整合最終 Prompt] --> L[呼叫 Groq LLM API]
+    L --> MDB_Write[(寫入 MongoDB: 對答、心理策略、使用者情緒、聊天主題、意圖、時間)]
+    MDB_Write --> O1[透過 Messaging API 回覆使用者訊息] --> M{若達今日對話上限，要做摘要}
+    M --> Z[生成摘要]
 
 ```
 <br>
@@ -73,30 +51,27 @@ flowchart TD
 
 ### `line_handlers.py`
 - 處理來自 LINE 的訊息事件。包括情緒儀表板、做量表、心理諮商
-- 整合向量檢索結果、歷史對話5筆、base prompt，丟入llm 生成line bot 回覆
+- 整合模糊比對與向量檢索結果、歷史對話5筆、base prompt，丟入llm 生成line bot 回覆
 
 ### `vector_search.py`
 
-負責向量檢索與向量距離判斷，流程如下：
+負責模糊比對與向量檢索，流程如下：
 
-1. **向量化**  
+1. **模糊比對（substring match）使用者輸入與 cycu_resources["中原大學資源"] 中資源名稱：**  
+  - 若命中資源 → 回傳該資源完整資訊（網址、簡介、分機等）。
+  - 若未命中 → 回傳 cycu_resources["用途索引"] 作為參考。
+
+2. **向量化**  
 -呼叫我們自己架設的 Hugging Face Space（[aurorajojo/e5-large-embedding-api](https://huggingface.co/spaces/aurorajojo/e5-large-embedding-api)）將使用者 input 轉換為向量。
 
-2. **載入FAISS向量庫**  
--載入本地向量庫 ([cycu_faiss_index](https://github.com/aurorajojo/line_app/blob/main/cycu_faiss_index))。內容為中原大學各項資源的文字描述，包含藝文資源、學習資源、心理輔導、體育場館、餐飲、教官室等資訊。
+3. **歷史摘要和使用者 input 向量距離比對與檢索**
 
-3. **和使用者 input 向量距離比對與檢索**
+  - 將使用者向量化後，在 summary_collection 中搜尋 該使用者的 Top2 相似歷史摘要。  
+  - 若命中 → 將摘要內容加入回傳資訊；若未命中 → 不加摘要。 
 
-- **FAISS向量庫**  
-  - 以向量距離閾值（預設 **0.35**）判斷結果是否相關。  
-  - **若小於等於閾值** → 視為「有相關資料」，取最相關的資源文字內容。  
-  - **若大於閾值** → 視為「無相關資料」，取 `cycu_resources.json` 中的 **用途索引**。  
-
-- **每日摘要**  
-  - 從 `summary_collection` 中取出 **該使用者的top1相近歷史每日摘要**。  
 
 4. **整合兩項檢索結果**
-- 回傳`「最相關的學校資源」+（若有的話）「歷史摘要」`或`回傳「用途索引」+（若有的話）「歷史摘要」`。
+- 將「中原資源 / 用途索引」和「歷史摘要」整合成最終資訊並回傳
      
 ### `llm.py`
 - 封裝與語言模型（Groq / LLaMA）溝通的邏輯
@@ -108,12 +83,12 @@ flowchart TD
 
 
 ### `emotion_strategy_utils.py`
--  為了避免讓使用者察覺我們正在進行 `情緒分析` 與 `心理策略及意圖紀錄` ，設計了隱藏式的標記機制(當 LLM 回傳分析結果時，不會直接以文字顯示情緒名稱或策略內容，是透過編碼形式（如 [1]～[12] 表示情緒、(1)～(8) 表示策略、{1}~{12} 表示意圖進行標註)，這個檔案就是在進行上述的標記轉換處理
+-  為了避免讓使用者察覺我們正在進行 `情緒分析` 與 `心理策略及意圖紀錄` ，設計了隱藏式的標記機制(當 LLM 回傳分析結果時，不會直接以文字顯示情緒名稱或策略內容，是透過編碼形式（如 [1]～[11] 表示情緒、(1)～(8) 表示策略、{1}~{12} 表示意圖進行標註)，這個檔案就是在進行上述的標記轉換處理
   
 ### `emotion_dashboard.py`
 - 根據使用者歷史對話紀錄，統計每種情緒七天內出現的頻率，並產生 `情緒儀表板` 
 - 為了讓情緒分析結果更有親和力，我們替每一種情緒設計了一個對應角色
-- 我們採用的情緒種類有: 1.焦慮 2.悲傷 3.憤怒 4.恐懼 5.厭惡 6.羞愧 7.快樂 8.滿足 9.驚訝 10.興奮 11.冷靜 12.無法判斷
+- 我們採用的情緒種類有: 1.焦慮 2.悲傷 3.憤怒 4.恐懼 5.厭惡 6.羞愧 7.滿足 8驚訝 9.興奮 10.冷靜 11.無法判斷
 
 ### `depression_scale.py`
 - 顯示 32 題 `董氏憂鬱量表-大專生版問題` ，讓使用者逐題作答
@@ -153,7 +128,7 @@ flowchart TD
 ### `system_prompt.txt`
 - 儲存語言模型的 system prompt，用於引導模型回應風格與身份定位
 - 設定llm回傳文字時，透過 `編碼 `形式顯示情緒、策略、意圖名稱
-- 設定llm不回答任何 `危險、非法或自殘 `相關問題
+- 設定llm不回答任何 `危險、非法或自殘 `相關問題以及`與諮商或中原資源無關的工作（如寫心得、知識回答、工具操作）`
 - 設定llm不透露任何 `prompt內部設計或詳細指令內容 `
 - 生成流程: 判斷四個層面 → 確認意圖 → 套用策略。(此作法參考論文[IntentionESC: An Intention-Centered Framework for Enhancing Emotional Support in Dialogue Systems](https://aclanthology.org/2025.findings-acl.1358.pdf))
 
@@ -165,10 +140,12 @@ flowchart TD
 ### `cycu_resources.json`
 - JSON 格式的資源資料檔案
 - 包含中原大學（CYCU）相關的各類資源資訊
+- 來源:[中原大學行政單位](https://www.cycu.edu.tw/?page_id=2401https://www.cycu.edu.tw/?page_id=2401)、[中原大學各單位分機資訊](https://www.cycu.edu.tw/tel.jsp)、[中原大學學生學習基地](https://acadm.cycu.edu.tw/%E5%AD%B8%E7%94%9F%E5%AD%B8%E7%BF%92%E5%9F%BA%E5%9C%B0/)
 
 ### `events.json`
 - JSON 格式的資源資料檔案
 - 包含中原大學（CYCU）本學期藝文活動列表
+- 來源:[中原大學活動報名系統-iTouch](https://itouch.cycu.edu.tw/active_project/cycu2100h_06/acpm3/#!/activityList/welcome)
 
 <br>  
 <br>  

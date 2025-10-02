@@ -1,13 +1,13 @@
 # vector_search.py
-# 當 FAISS 有相關資料：回傳「最相關的學校資源」+（若有的話）「歷史摘要」。  
-# 當 FAISS 無相關資料：回傳「用途索引」+（若有的話）「歷史摘要」。 
+# 當 cycu_resources 有相關資料：回傳「最相關的學校資源」+（若有的話）「歷史摘要」最多兩筆。  
+# 當 cycu_resources 無相關資料：回傳「用途索引」+（若有的話）「歷史摘要」最多兩筆。 
 
 from gradio_client import Client
-from langchain_community.vectorstores import FAISS
 from langchain_core.embeddings import Embeddings
 from mongo import summary_collection
 from resources import  cycu_resources  # 從 resources.py 匯入
 import json
+import re
 
 HF_SPACE_ID = "aurorajojo/e5-large-embedding-api"
 HF_API_NAME = "/predict"
@@ -22,33 +22,26 @@ class APIEmbeddings(Embeddings):
 
 # 載入本地向量庫資料夾
 embeddings = APIEmbeddings()
-vectorstore = FAISS.load_local(
-    "cycu_faiss_index",
-    embeddings,
-    allow_dangerous_deserialization=True
-)
+
 
 def query_vectorstore(text, user_id, threshold=0.35):
     """
-    計算向量回傳整合文字：
+    回傳學校資源資訊或用途索引，並附個人歷史摘要最多兩筆：
     - 最相關資源 + 個人摘要
-    - 或 用途索引 + 個人摘要
+    - 或 
+    - 用途索引 + 個人摘要
     """
+    text_lower = text.lower()
+    matched_resource = None
+
+    for res_name in cycu_resources.get("中原大學資源", {}):
+        # 忽略大小寫模糊比對（substring match）
+        if re.search(re.escape(res_name.lower()), text_lower):
+            matched_resource = res_name
+            break
+
     # 只計算一次向量
     query_emb = embeddings.embed_query(text)
-
-    # --- 查 FAISS ---
-    results_faiss = vectorstore.similarity_search_with_score_by_vector(query_emb, k=1)
-    faiss_hit = False
-    if results_faiss:
-        top_doc, top_score = results_faiss[0]
-        if top_score <= threshold:
-            faiss_hit = True
-            doc_content = top_doc.page_content
-        else:
-            doc_content = None
-    else:
-        doc_content = None
 
     # --- 查 MongoDB summary ---
     pipeline = [
@@ -57,24 +50,34 @@ def query_vectorstore(text, user_id, threshold=0.35):
                 "queryVector": query_emb,
                 "path": "embedding",
                 "index": "sum",
-                "k": 1,
+                "k": 2,
                 "numCandidates": 100,
                 "filter": {"user_id": user_id},
-                "limit": 1
+                "limit": 2
             }
         }
     ]
     results_sum = list(summary_collection.aggregate(pipeline))
-    summary = results_sum[0].get("summary", "") if results_sum else ""
+    summary_list = [res.get("summary", "") for res in results_sum]
+    summary_text = "\n---\n".join(summary_list) if summary_list else ""
+
 
     # --- 組合文字輸出 ---
-    if faiss_hit:
-        output = f"以下是與您問題最相關的學校資源：\n{doc_content}"
+    if matched_resource:
+        # 回傳完整資源資訊
+        resource_info = cycu_resources["中原大學資源"].get(matched_resource, {})
+        output = (
+            f"以下是與您問題相關的學校資源：\n"
+            f"{matched_resource}：\n"
+            f"{json.dumps(resource_info, ensure_ascii=False)}"
+        )
     else:
-        usage_index = json.dumps(cycu_resources.get('用途索引', {}), ensure_ascii=False)
+        # 回傳用途索引
+        usage_index = json.dumps(cycu_resources.get("用途索引", {}), ensure_ascii=False)
         output = f"以下是可參考的學校資源索引：\n{usage_index}"
 
-    if summary:
-        output += f"\n以下是最相關的歷史摘要：\n{summary}"
+    # 附上歷史摘要（RAG）
+    if summary_text:
+        output += f"\n以下是最相關的歷史摘要：\n{summary_text}"
 
     return output

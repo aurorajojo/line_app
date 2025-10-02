@@ -2,7 +2,7 @@
 # ===== 儲存各種設定值與金鑰 =====
 
 import os
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 
 # 載入 .env
 #load_dotenv()
@@ -26,4 +26,5 @@ PROMPT_FILE = os.path.join(BASE_DIR, 'data', 'system_prompt.txt')
 SUM_PROMPT = os.path.join(BASE_DIR, 'data', 'summary_prompt.txt')
 RESOURCE_FILE = os.path.join(BASE_DIR, 'data', 'cycu_resources.json')
 EVENTS_FILE = os.path.join(BASE_DIR, "data", "events.json")
+
 

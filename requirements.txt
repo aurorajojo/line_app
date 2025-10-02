@@ -5,3 +5,4 @@ pymongo
 certifi
 gunicorn
 gradio_client
+langchain

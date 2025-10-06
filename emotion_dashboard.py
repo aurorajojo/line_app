@@ -102,7 +102,7 @@ def generate_text_dashboard(user_id):
         # === 建立單一情緒的 bubble 卡片 ===
         bubble = {
             "type": "bubble",
-            "size": "deca",  # 使用 nano 大小，適合多張卡片並列
+            "size": "micro",  # 使用 micro 大小，適合多張卡片並列
             "header": {
                 "type": "box",
                 "layout": "vertical",
@@ -110,28 +110,33 @@ def generate_text_dashboard(user_id):
                     # 顯示角色
                     {"type": "text", "text": character, "color": "#ffffff", "align": "start", "size": "md","wrap": True},
                     # 顯示比例 %
-                    {"type": "text", "text": f"{percent}%", "color": "#ffffff", "align": "start", "size": "xs", "margin": "lg"},
+                    {"type": "text", "text": f"{percent}%", "color": "#ffffff", "align": "start", "size": "xs", "margin": "lg", "align": "center"},
                     # 進度條（長條圖）
                     {
                         "type": "box",
                         "layout": "vertical",
                         "contents": [
                             {
+                                "type":"filler"
+                            },
+                            {
                                 "type": "box",
                                 "layout": "vertical",
-                                "contents": [{"type": "filler"}],  # 內部填充
-                                "width": f"{percent}%",  # 進度條長度
+                                "contents": [],
                                 "backgroundColor": bar_color,  # 進度條顏色
-                                "height": "12px"
+                                "height": f"{percent}%"
                             }
                         ],
                         "backgroundColor": "#FFFFFF4D",  # 外框背景
-                        "height": "12px",
-                        "margin": "sm"
+                        "width": "20px",
+                        "height": "100px",
+                        "margin": "sm",
+                        "paddingTop": "md",
+                        "offsetStart": "60px",
+                        "cornerRadius": "6px"
                     }
                 ],
                 "backgroundColor": bg_color,  # 卡片上方背景色
-                "paddingAll": "24px"
             },
             "body": {
                 "type": "box",
@@ -140,7 +145,6 @@ def generate_text_dashboard(user_id):
                     # 顯示情緒名稱
                     {"type": "text", "text": emo, "color": "#8C8C8C", "size": "sm", "wrap": True}
                 ],
-                "spacing": "md",
                 "paddingAll": "24px"
             },
             "styles": {"footer": {"separator": False}}
@@ -150,7 +154,7 @@ def generate_text_dashboard(user_id):
 
     intro_bubble = {
         "type": "bubble",
-        "size": "deca",
+        "size": "micro",
         "body": {
             "type": "box",
             "layout": "vertical",
@@ -159,7 +163,7 @@ def generate_text_dashboard(user_id):
                 {
                     "type": "text",
                     "text": (
-                        "以下是您過去七天的情緒儀表板\n"
+                        "情緒儀表板\n"
                     ),
                     "wrap": True,
                     "size": "md",
@@ -172,9 +176,9 @@ def generate_text_dashboard(user_id):
                 {
                     "type": "text",
                     "text": (
-                        "每張卡片代表一種情緒，顯示它在對話中出現的比例，而不是情緒強度。\n"
-                        "數字越高，表示這種情緒在最近七天出現得越頻繁。\n"
-                        "慢慢看看這些趨勢，回顧自己的心情，也別忘了給自己一些關心～"
+                        "以下是您過去七天對話中出現的所有情緒。\n"
+                        "進度條代表該情緒出現的比例。\n"
+                        "看看誰陪你最久，順便回顧自己的心情，也別忘了給自己一些關心～"
                     ),
                     "wrap": True,
                     "size": "sm",

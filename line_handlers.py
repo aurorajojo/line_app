@@ -233,6 +233,16 @@ def handle_text(event):
                 )
             )
             return    
+
+        if len(user_input) > 128:   # 限制字數在128字，以免使用token太多
+
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text="抱歉，輸入文字不能超過 125 個字，請縮短文字再試一次喔～")]
+                )
+            )
+            return  # 超過限制就不繼續後面的流程
         
         # === 檢查是否要設定主題 === 
         status, topic = check_and_set_topic(user_id, user_input)

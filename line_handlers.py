@@ -296,8 +296,10 @@ def handle_text(event):
             history_text = "【歷史】\n"
             for h in history:
                 if "user_input" in h:
+                    user_input = re.sub(r"[\(\[\{]\d+[\)\]\}]", "", user_input).strip()   # 把(數字) [數字] {數字} ... 刪掉 
                     history_text += f"user: {h['user_input']}\n"
                 if "reply" in h:
+                    reply = re.sub(r"[\(\[\{]\d+[\)\]\}]", "", reply).strip()             # 把(數字) [數字] {數字} ... 刪掉 
                     history_text += f"system: {h['reply']}\n"
             messages.append({"role": "user", "content": history_text.strip()})
 

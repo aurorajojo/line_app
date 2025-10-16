@@ -292,19 +292,19 @@ def handle_text(event):
         # === 查詢歷史對話，建立上下文 ===
         history = list(history_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(5))  # 5筆
         history.reverse()  # 由舊至新
+
         if history:
             history_text = "【歷史】\n"
             for h in history:
                 if "user_input" in h:
-                    user_input = re.sub(r"[\(\[\{]\d+[\)\]\}]", "", user_input).strip()   # 把(數字) [數字] {數字} ... 刪掉 
-                    history_text += f"user: {h['user_input']}\n"
+                    tmp = re.sub(r"[\(\[\{]\d+[\)\]\}]", "", h["user_input"]).strip()  
+                    history_text += f"user: {tmp}\n"                                 
                 if "reply" in h:
-                    reply = re.sub(r"[\(\[\{]\d+[\)\]\}]", "", reply).strip()             # 把(數字) [數字] {數字} ... 刪掉 
-                    history_text += f"system: {h['reply']}\n"
+                    tmp = re.sub(r"[\(\[\{]\d+[\)\]\}]", "", h["reply"]).strip()      
+                    history_text += f"system: {tmp}\n"
             messages.append({"role": "user", "content": history_text.strip()})
 
-        # === 最新使用者輸入也加入上下文末端 === 
-        messages.append({"role": "user", "content": f"【本次】{user_input}"})
+
 
         # === 呼叫 LLM 產生回覆 ===
         reply = call_groq_llm(messages)

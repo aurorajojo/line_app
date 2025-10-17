@@ -304,6 +304,8 @@ def handle_text(event):
                     history_text += f"system: {tmp}\n"
             messages.append({"role": "user", "content": history_text.strip()})
 
+        # === 最新使用者輸入也加入上下文末端 === 
+        messages.append({"role": "user", "content": f"【本次】{user_input}"})
 
 
         # === 呼叫 LLM 產生回覆 ===
@@ -371,4 +373,5 @@ def handle_postback(event):     # 使用者用日期選擇器，查詢特定日�
                     reply_token=event.reply_token,
                     messages=[flex]
                 )
+
             )

@@ -53,9 +53,9 @@ def query_vectorstore(text, user_id, threshold=0.35):
     text_lower = text.lower()
     matched_resource = None
 
-    for res_name in cycu_resources.get("中原大學資源", {}):
-        # 忽略大小寫模糊比對（substring match）
-        if res_name.lower() in text_lower:
+    for res_name, aliases in resource_alias.items():
+        # 比對正式名稱與別名（忽略大小寫）
+        if res_name.lower() in text_lower or any(alias.lower() in text_lower for alias in aliases):
             matched_resource = res_name
             break
 
